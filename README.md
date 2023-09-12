@@ -1,6 +1,6 @@
-# fugofri
+# furlzz
 
-fugofri(FUzz GO FRIda) is a small fuzzer written to test out iOS URL schemes. 
+furlzz is a small fuzzer written to test out iOS URL schemes. 
 It does so by attaching to the application using Frida and based on the input/seed it mutates the data 
 and try to open the URL. This works in process, meaning you aren't actually opening the URL using apps 
 such as SpringBoard.
@@ -10,27 +10,28 @@ such as SpringBoard.
 Download one of the prebuilt binaries for macOS(x86_64 or arm64) from [here](#) or do it manually as described below.
 
 * Follow the instructions for devkit documented [here](https://github.com/frida/frida-go)
-* Run `go install github.com/nsecho/fugofri@latest`
+* Run `go install github.com/nsecho/furlzz@latest`
 
 # Usage
 
 ```bash
-$ fugofri --help
-Fuzz URL schemes on iOS
+$ furlzz --help
+Fuzz iOS URL schemes
 
 Usage:
-  fugofrida [flags]
+  furlzz [flags]
 
 Flags:
   -a, --app string        Application name to attach to (default "Gadget")
   -b, --base string       base URL to fuzz
   -f, --function string   apply the function to mutated input (url, base64)
-  -h, --help              help for fugofrida
+  -h, --help              help for furlzz
+  -i, --input string      path to input directory
   -r, --runs uint         number of runs
-  -s, --seed string       path to seeds directory
+  -t, --timeout uint      sleep X seconds between each case (default 1)
 ```
 
-There are basically two ways you can go with fuzzing using `fugofri`:
+There are basically two ways you can go with fuzzing using `furlzz`:
 
 * give base URL (`--base`) with `FUZZ` keyword in it along with `--seed` directory containing inputs
 * just give base URL without `FUZZ` keyword which would fuzz the raw base url passed
@@ -47,21 +48,23 @@ $ echo -n '00ffab' > seeds/00ffab
 $ echo -n 'ffffff' > seeds/ffffff
 ```
 
-2. Run fugofri
+2. Run furlzz
 
 ```bash
-$ fugofri -a Telegram -b 'tg://bg?color=FUZZ' -s seeds/ -r 100 -fn url
+$ furlzz -a Telegram -b 'tg://bg?color=FUZZ' -s seeds/ -r 100 -fn url
 ```
 
-fugofri supports two post-process methods right now; url and base64. The first one does URL 
+furlzz supports two post-process methods right now; url and base64. The first one does URL 
 encode on the mutated input while the second one generates base64 from it.
 
 # Mutations
 
-Supported mutations are:
-* string based
-  * insert random char at random position of input
-  * delete char from random position
-  * substitute replaces char at random position with random char
-* integer based
-  * arithmetic add - add random uint8 number to the input
+* insert - inserts random byte at random location inside the input
+* del - deletes random byte
+* substitute - substitute byte at random position with random byte
+* byteOp - takes random byte and random position inside the string and do arithmetic operation on them (+, -, *, /)
+* duplicateRange - duplicates random range inside the original string random number of times
+* bitFlip - flips the bit at random position inside random location inside input
+* bitmask - applies random bitmask on random location inside the string
+* duplicate - duplicates original string random number of times (2 < 10)
+* another - run other mutations random number of times
