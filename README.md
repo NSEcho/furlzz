@@ -59,12 +59,12 @@ encode on the mutated input while the second one generates base64 from it.
 
 # Mutations
 
-* insert - inserts random byte at random location inside the input
-* del - deletes random byte
-* substitute - substitute byte at random position with random byte
-* byteOp - takes random byte and random position inside the string and do arithmetic operation on them (+, -, *, /)
-* duplicateRange - duplicates random range inside the original string random number of times
-* bitFlip - flips the bit at random position inside random location inside input
-* bitmask - applies random bitmask on random location inside the string
-* duplicate - duplicates original string random number of times (2 < 10)
-* another - run other mutations random number of times
+* `insert` - inserts random byte at random location inside the input
+* `del` - deletes random byte
+* `substitute` - substitute byte at random position with random byte
+* `byteOp` - takes random byte and random position inside the string and do arithmetic operation on them (+, -, *, /)
+* `duplicateRange` - duplicates random range inside the original string random number of times
+* `bitFlip` - flips the bit at random position inside random location inside input
+* `bitmask` - applies random bitmask on random location inside the string
+* `duplicate` - duplicates original string random number of times (2 < 10)
+* `another` - run other mutations random number of times
