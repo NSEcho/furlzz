@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -105,8 +106,25 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
+		var lastInput string
+
 		sess.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
 			l.Infof("session detached; reason=%s", reason.String())
+			out := crashSHA256(lastInput)
+			err := func() error {
+				f, err := os.Create(out)
+				if err != nil {
+					return err
+				}
+				f.WriteString(lastInput)
+				return nil
+			}()
+			if err != nil {
+				l.Errorf("error writing crash file: %v", err)
+			} else {
+				l.Infof("written crash to: %s", out)
+			}
+			os.Exit(1)
 		})
 
 		script, err := sess.CreateScript(scriptContent)
@@ -131,6 +149,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		for mutated := range ch {
+			lastInput = mutated.Input
 			l.Infof("[%s] %s\n", color.New(color.FgCyan).Sprintf("%s", mutated.Mutation), mutated.Input)
 			_ = script.ExportsCall("fuzz", method, mutated.Input)
 			if timeout > 0 {
@@ -189,4 +208,10 @@ func readInputs(dirPath string) ([]string, error) {
 		validInputs = append(validInputs, string(data))
 	}
 	return validInputs, nil
+}
+
+func crashSHA256(inp string) string {
+	h := sha256.New()
+	h.Write([]byte(inp))
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
