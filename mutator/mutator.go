@@ -125,21 +125,21 @@ func (m *Mutator) Mutate() <-chan *Mutated {
 						}
 						ct++
 					}
+				}
 
-					if _, ok := applyFunctions[m.fnName]; ok {
-						mutatedInput = applyFunctions[m.fnName](mutatedInput)
+				if _, ok := applyFunctions[m.fnName]; ok {
+					mutatedInput = applyFunctions[m.fnName](mutatedInput)
+				}
+
+				if m.fuzzIdx == -1 || len(m.validInputs) == 0 {
+					m.ch <- &Mutated{
+						Input:    mutatedInput,
+						Mutation: method,
 					}
-
-					if m.fuzzIdx == -1 || len(m.validInputs) == 0 {
-						m.ch <- &Mutated{
-							Input:    mutatedInput,
-							Mutation: method,
-						}
-					} else {
-						m.ch <- &Mutated{
-							Input:    strings.Replace(m.baseURL, "FUZZ", mutatedInput, -1),
-							Mutation: method,
-						}
+				} else {
+					m.ch <- &Mutated{
+						Input:    strings.Replace(m.baseURL, "FUZZ", mutatedInput, -1),
+						Mutation: method,
 					}
 				}
 				m.lastInput = mutatedInput
