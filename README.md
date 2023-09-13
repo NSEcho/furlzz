@@ -7,8 +7,6 @@ such as SpringBoard.
 
 # Installation
 
-Download one of the prebuilt binaries for macOS(x86_64 or arm64) from [here](#) or do it manually as described below.
-
 * Follow the instructions for devkit documented [here](https://github.com/frida/frida-go)
 * Run `go install github.com/nsecho/furlzz@latest`
 
@@ -27,6 +25,7 @@ Flags:
   -f, --function string   apply the function to mutated input (url, base64)
   -h, --help              help for furlzz
   -i, --input string      path to input directory
+  -m, --method string     method of opening url (delegate, app) (default "delegate")
   -r, --runs uint         number of runs
   -t, --timeout uint      sleep X seconds between each case (default 1)
 ```
@@ -39,7 +38,13 @@ There are basically two ways you can go with fuzzing using `furlzz`:
 Let's say that we would like to fuzz `tg://bg?color=` inside Telegram application. This accepts hex color bytes, 
 for example `bbff00`.
 
-1. Create `seed` directory and give some sample inputs
+1. Decide the method of opening URLs
+
+Run `frida-trace` to trace for `openURL` to determine how application opens URLs. If we see `application:openURL:options:` being called 
+we need to pass `-m delegate` to furlzz, and if we see `_openURL:` we will pass `-m app`. There are more methods, but 
+these two are supported right now and of course PR are welcome.
+
+2. Create `seed` directory and give some sample inputs
 
 ```bash
 $ mkdir seeds
@@ -48,10 +53,10 @@ $ echo -n '00ffab' > seeds/00ffab
 $ echo -n 'ffffff' > seeds/ffffff
 ```
 
-2. Run furlzz
+3. Run furlzz
 
 ```bash
-$ furlzz -a Telegram -b 'tg://bg?color=FUZZ' -s seeds/ -r 100 -fn url
+$ ./furlzz -b "tg://bg?color=FUZZ" -f url -i seeds/ -t 1 -a Telegram -m delegate
 ```
 
 furlzz supports two post-process methods right now; url and base64. The first one does URL 
