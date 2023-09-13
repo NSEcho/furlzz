@@ -14,6 +14,7 @@ builds:
       - amd64
     flags:
       - -trimpath
+    ldflags: -s -w
   - id: macos_arm64
     binary: furlzz
     env:
@@ -26,6 +27,7 @@ builds:
       - arm64
     flags:
       - -trimpath
+    ldflags: -s -w
 checksum:
   name_template: 'checksums.txt'
 changelog:
