@@ -7,6 +7,9 @@ such as SpringBoard.
 
 # Installation
 
+Download prebuilt binaries from [here](https://github.com/NSEcho/furlzz/releases) or do it manually.
+
+To manually install furlzz, do:
 * Follow the instructions for devkit documented [here](https://github.com/frida/frida-go)
 * Run `go install github.com/nsecho/furlzz@latest`
 
