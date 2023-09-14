@@ -63,7 +63,7 @@ encode on the mutated input while the second one generates base64 from it.
 * `bitFlip` - flips the bit at random position inside random location inside input
 * `bitmask` - applies random bitmask on random location inside the string
 * `duplicate` - duplicates original string random number of times (2 < 10)
-* `another` - run other mutations random number of times
+* `multiple` - run other mutations random number of times
 
 # URL open methods
 
