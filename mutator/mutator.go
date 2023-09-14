@@ -1,14 +1,14 @@
 package mutator
 
 import (
+	"bytes"
 	"math/rand"
-	"strings"
 	"time"
 )
 
-func NewMutator(inp string, runs uint, fnName string, validInputs ...string) *Mutator {
+func NewMutator(inp []byte, runs uint, fnName string, validInputs ...[]byte) *Mutator {
 	return &Mutator{
-		fuzzIdx:        strings.Index(inp, "FUZZ"),
+		fuzzIdx:        bytes.Index(inp, []byte("FUZZ")),
 		baseURL:        inp,
 		input:          inp,
 		fnName:         fnName,
@@ -23,18 +23,18 @@ func NewMutator(inp string, runs uint, fnName string, validInputs ...string) *Mu
 type Mutator struct {
 	fuzzIdx        int
 	runs           uint
-	baseURL        string
-	input          string
-	lastInput      string
+	baseURL        []byte
+	input          []byte
+	lastInput      []byte
 	fnName         string
 	ch             chan *Mutated
 	r              *rand.Rand
-	validInputs    []string
+	validInputs    [][]byte
 	multipleRounds bool
 }
 
 type Mutated struct {
-	Input    string
+	Input    []byte
 	Mutation string
 }
 
@@ -42,7 +42,7 @@ func (m *Mutator) Mutate() <-chan *Mutated {
 	go func() {
 		if m.runs > 0 {
 			for i := 0; i < int(m.runs); i++ {
-				var mutatedInput string
+				var mutatedInput []byte
 				var method string
 				mut := m.r.Intn(len(mutations) + 1)
 				// run random mutations random number of times
@@ -86,7 +86,7 @@ func (m *Mutator) Mutate() <-chan *Mutated {
 					}
 				} else {
 					m.ch <- &Mutated{
-						Input:    strings.Replace(m.baseURL, "FUZZ", mutatedInput, -1),
+						Input:    bytes.Replace(m.baseURL, []byte("FUZZ"), mutatedInput, -1),
 						Mutation: method,
 					}
 				}
@@ -95,7 +95,7 @@ func (m *Mutator) Mutate() <-chan *Mutated {
 			close(m.ch)
 		} else {
 			for {
-				var mutatedInput string
+				var mutatedInput []byte
 				var method string
 				mut := m.r.Intn(len(mutations) + 1)
 				if mut == len(mutations) {
@@ -138,7 +138,7 @@ func (m *Mutator) Mutate() <-chan *Mutated {
 					}
 				} else {
 					m.ch <- &Mutated{
-						Input:    strings.Replace(m.baseURL, "FUZZ", mutatedInput, -1),
+						Input:    bytes.Replace(m.baseURL, []byte("FUZZ"), mutatedInput, -1),
 						Mutation: method,
 					}
 				}

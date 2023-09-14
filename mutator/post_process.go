@@ -5,17 +5,19 @@ import (
 	"net/url"
 )
 
-type applyFn func(input string) string
+type applyFn func(input []byte) []byte
 
 var applyFunctions = map[string]applyFn{
 	"url":    urlEncode,
 	"base64": base64Encode,
 }
 
-func urlEncode(input string) string {
-	return url.QueryEscape(input)
+func urlEncode(input []byte) []byte {
+	return []byte(url.QueryEscape(string(input)))
 }
 
-func base64Encode(input string) string {
-	return base64.StdEncoding.EncodeToString([]byte(input))
+func base64Encode(input []byte) []byte {
+	dst := make([]byte, base64.StdEncoding.EncodedLen(len(input)))
+	base64.StdEncoding.Encode(dst, input)
+	return dst
 }
