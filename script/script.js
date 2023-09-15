@@ -31,9 +31,9 @@ rpc.exports = {
                         delegate = ObjC.Object(ObjC.chooseSync(AppDelegate)[0]);
                     }
                     if (appName != "") {
-                        app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
-                    } else {
                         app = ObjC.Object(ObjC.chooseSync(ObjC.classes[appName])[0]);
+                    } else {
+                        app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
                     }
                 }
                 break;
