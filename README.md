@@ -74,5 +74,6 @@ Right now furlzz supports two methods of opening URLs:
 * `scene_activity` - when the application is using `-[UISceneDelegate scene:continueUserActivity]`
 
 For the method of `scene_activity` you need to pass the `UISceneDelegate` class name
+For the method of `delegate` you need to pass the `AppDelegate` class name
 
 PRs are more than welcome to extend any functionality inside the furlzz
