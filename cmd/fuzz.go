@@ -62,6 +62,11 @@ var fuzzCmd = &cobra.Command{
 			return err
 		}
 
+		delegate, err := cmd.Flags().GetString("delegate")
+		if err != nil {
+			return err
+		}
+
 		l.Infof("Fuzzing base URL \"%s\"", base)
 		if strings.Contains(base, "FUZZ") {
 			l.Infof("Read %d inputs from %s directory",
@@ -155,7 +160,7 @@ var fuzzCmd = &cobra.Command{
 		for mutated := range ch {
 			lastInput = mutated.Input
 			l.Infof("[%s] %s\n", color.New(color.FgCyan).Sprintf("%s", mutated.Mutation), mutated.Input)
-			_ = script.ExportsCall("fuzz", method, string(mutated.Input))
+			_ = script.ExportsCall("fuzz", method, string(mutated.Input), delegate)
 			if timeout > 0 {
 				time.Sleep(time.Duration(timeout) * time.Second)
 			}
@@ -170,6 +175,7 @@ func init() {
 	fuzzCmd.Flags().StringP("input", "i", "", "path to input directory")
 	fuzzCmd.Flags().StringP("function", "f", "", "apply the function to mutated input (url, base64)")
 	fuzzCmd.Flags().StringP("method", "m", "delegate", "method of opening url (delegate, app)")
+	fuzzCmd.Flags().StringP("delegate", "d", "", "if the method is scene_activity, you need to specify UISceneDelegate class")
 	fuzzCmd.Flags().UintP("runs", "r", 0, "number of runs")
 	fuzzCmd.Flags().UintP("timeout", "t", 1, "sleep X seconds between each case")
 
