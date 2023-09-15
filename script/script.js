@@ -7,34 +7,65 @@ const {
     NSUserActivity,
 } = ObjC.classes;
 
+var app = null;
 var delegate = null;
 var shared = null;
 var scene = null;
 var sceneDelegate = null;
 var opts = NSDictionary.alloc().init();
-const app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
 
-const NSUserActivityTypeBrowsingWeb = ObjC.Object(Memory.readPointer(Module.findExportByName(null, "NSUserActivityTypeBrowsingWeb")));
-var activity = NSUserActivity.alloc().initWithActivityType_(NSUserActivityTypeBrowsingWeb);
+var NSUserActivityTypeBrowsingWeb = null;
+var activity = null;
+
+var NSUserActivityTypeBrowsingWeb = null
+var activity = null;
 
 rpc.exports = {
-    fuzz(method, url, delegateName) {
-        var ur = NSURL.URLWithString_(url);
+    setup(method, appName, delegateName) {
         switch (method) {
             case "delegate":
                 if (delegate == null) {
-                    delegate = ObjC.Object(ObjC.chooseSync(AppDelegate)[0]);
+                    if (delegateName != "" ) {
+                        delegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
+                    } else {
+                        delegate = ObjC.Object(ObjC.chooseSync(AppDelegate)[0]);
+                    }
+                    if (appName != "") {
+                        app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
+                    } else {
+                        app = ObjC.Object(ObjC.chooseSync(ObjC.classes[appName])[0]);
+                    }
                 }
-                delegate.application_openURL_options_(app, ur, opts);
                 break;
             case "app":
-                app.openURL_(ur);
+                if (appName != "") {
+                    app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
+                } else {
+                    app = ObjC.Object(ObjC.chooseSync(ObjC.classes[appName])[0]);
+                }
+                break;
             case "scene_activity":
                 if (shared == null) {
+                    NSUserActivityTypeBrowsingWeb = ObjC.Object(Memory.readPointer(Module.findExportByName(null, "NSUserActivityTypeBrowsingWeb")));
+                    activity = NSUserActivity.alloc().initWithActivityType_(NSUserActivityTypeBrowsingWeb);
                     sceneDelegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
                     shared = ObjC.Object(UIApplication.sharedApplication());
                     scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
                 }
+            default:
+                return "method not implemented";
+        }
+    },
+    fuzz(method, url, appName, delegateName) {
+        var ur = NSURL.URLWithString_(url);
+        switch (method) {
+            case "delegate":
+                delegate.application_openURL_options_(app, ur, opts);
+                break;
+            case "app":
+                app.openURL_(ur);
+                break;
+            case "scene_activity":
                 activity.setWebPageURL_(ur);
 
                 ObjC.schedule(ObjC.mainQueue, () => {
