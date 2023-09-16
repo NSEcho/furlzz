@@ -168,7 +168,7 @@ var fuzzCmd = &cobra.Command{
 		for mutated := range ch {
 			lastInput = mutated.Input
 			l.Infof("[%s] %s\n", color.New(color.FgCyan).Sprintf("%s", mutated.Mutation), mutated.Input)
-			_ = script.ExportsCall("fuzz", method, string(mutated.Input), uiapp, delegate)
+			_ = script.ExportsCall("fuzz", method, string(mutated.Input))
 			if timeout > 0 {
 				time.Sleep(time.Duration(timeout) * time.Second)
 			}

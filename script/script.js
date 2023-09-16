@@ -5,6 +5,9 @@ const {
     NSDictionary,
     UIWindowScene,
     NSUserActivity,
+    UIOpenURLContext,
+    UISceneOpenURLOptions,
+    NSSet,
 } = ObjC.classes;
 
 var app = null;
@@ -20,11 +23,12 @@ var activity = null;
 var NSUserActivityTypeBrowsingWeb = null
 var activity = null;
 
+var ctx = null;
+
 rpc.exports = {
     setup(method, appName, delegateName) {
         switch (method) {
             case "delegate":
-                if (delegate == null) {
                     if (delegateName != "" ) {
                         delegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
                     } else {
@@ -35,7 +39,6 @@ rpc.exports = {
                     } else {
                         app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
                     }
-                }
                 break;
             case "app":
                 if (appName != "") {
@@ -45,18 +48,23 @@ rpc.exports = {
                 }
                 break;
             case "scene_activity":
-                if (shared == null) {
-                    NSUserActivityTypeBrowsingWeb = ObjC.Object(Memory.readPointer(Module.findExportByName(null, "NSUserActivityTypeBrowsingWeb")));
-                    activity = NSUserActivity.alloc().initWithActivityType_(NSUserActivityTypeBrowsingWeb);
-                    sceneDelegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
-                    shared = ObjC.Object(UIApplication.sharedApplication());
-                    scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
-                }
+                NSUserActivityTypeBrowsingWeb = ObjC.Object(Memory.readPointer(Module.findExportByName(null, "NSUserActivityTypeBrowsingWeb")));
+                activity = NSUserActivity.alloc().initWithActivityType_(NSUserActivityTypeBrowsingWeb);
+                sceneDelegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
+                shared = ObjC.Object(UIApplication.sharedApplication());
+                scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
+                break;
+            case "scene_context":
+                sceneDelegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
+                scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
+                ctx = UIOpenURLContext.alloc().init();
+                ctxOpts = UISceneOpenURLOptions.alloc().init();
+                break;
             default:
                 return "method not implemented";
         }
     },
-    fuzz(method, url, appName, delegateName) {
+    fuzz(method, url) {
         var ur = NSURL.URLWithString_(url);
         switch (method) {
             case "delegate":
@@ -71,6 +79,12 @@ rpc.exports = {
                 ObjC.schedule(ObjC.mainQueue, () => {
                     sceneDelegate.scene_continueUserActivity_(scene, activity);
                 })
+                break;
+            case "scene_context":
+                ctx.$ivars._URL = ur;
+                var setCtx = NSSet.setWithObject_(ctx);
+                sceneDelegate.scene_openURLContexts_(scene, setCtx);
+                break;
             default:
                 return "method not implemented";
         }
