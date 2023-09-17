@@ -24,9 +24,10 @@ var NSUserActivityTypeBrowsingWeb = null
 var activity = null;
 
 var ctx = null;
+var ctxOpts = null;
 
 rpc.exports = {
-    setup(method, appName, delegateName) {
+    setup(method, appName, delegateName, sceneName) {
         switch (method) {
             case "delegate":
                     if (!delegateName) {
@@ -52,11 +53,19 @@ rpc.exports = {
                 activity = NSUserActivity.alloc().initWithActivityType_(NSUserActivityTypeBrowsingWeb);
                 sceneDelegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
                 shared = ObjC.Object(UIApplication.sharedApplication());
-                scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
+                if (!sceneName) {
+                    scene = ObjC.Object(ObjC.chooseSync(ObjC.classes[scene])[0]);
+                } else {
+                    scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
+                }
                 break;
             case "scene_context":
                 sceneDelegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
-                scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
+                if (sceneName) {
+                    scene = ObjC.Object(ObjC.chooseSync(ObjC.classes[sceneName])[0]);
+                } else {
+                    scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
+                }
                 ctx = UIOpenURLContext.alloc().init();
                 ctxOpts = UISceneOpenURLOptions.alloc().init();
                 break;
@@ -83,8 +92,11 @@ rpc.exports = {
                 break;
             case "scene_context":
                 ctx.$ivars._URL = ur;
+                ctx.$ivars._options = ctxOpts;
                 var setCtx = NSSet.setWithObject_(ctx);
-                sceneDelegate.scene_openURLContexts_(scene, setCtx);
+                ObjC.schedule(ObjC.mainQueue, () => {
+                    sceneDelegate.scene_openURLContexts_(scene, setCtx);
+                });
                 break;
             default:
                 return "method not implemented";
