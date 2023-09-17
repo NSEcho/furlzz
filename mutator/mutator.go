@@ -1,14 +1,14 @@
 package mutator
 
 import (
-	"bytes"
 	"math/rand"
+	"strings"
 	"time"
 )
 
-func NewMutator(inp []byte, runs uint, fnName string, validInputs ...[]byte) *Mutator {
+func NewMutator(inp string, runs uint, fnName string, validInputs ...string) *Mutator {
 	return &Mutator{
-		fuzzIdx:        bytes.Index(inp, []byte("FUZZ")),
+		fuzzIdx:        strings.Index(inp, "FUZZ"),
 		baseURL:        inp,
 		input:          inp,
 		fnName:         fnName,
@@ -23,18 +23,18 @@ func NewMutator(inp []byte, runs uint, fnName string, validInputs ...[]byte) *Mu
 type Mutator struct {
 	fuzzIdx        int
 	runs           uint
-	baseURL        []byte
-	input          []byte
-	lastInput      []byte
+	baseURL        string
+	input          string
+	lastInput      string
 	fnName         string
 	ch             chan *Mutated
 	r              *rand.Rand
-	validInputs    [][]byte
+	validInputs    []string
 	multipleRounds bool
 }
 
 type Mutated struct {
-	Input    []byte
+	Input    string
 	Mutation string
 }
 
@@ -55,7 +55,7 @@ func (m *Mutator) Mutate() <-chan *Mutated {
 }
 
 func (m *Mutator) mutateAndSend() {
-	var mutatedInput []byte
+	var mutatedInput string
 	var method string
 	mut := m.r.Intn(len(mutations) + 1)
 	// run random mutations random number of times
@@ -99,7 +99,7 @@ func (m *Mutator) mutateAndSend() {
 		}
 	} else {
 		m.ch <- &Mutated{
-			Input:    bytes.Replace(m.baseURL, []byte("FUZZ"), mutatedInput, -1),
+			Input:    strings.Replace(m.baseURL, "FUZZ", mutatedInput, -1),
 			Mutation: method,
 		}
 	}

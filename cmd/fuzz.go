@@ -15,7 +15,7 @@ var fuzzCmd = &cobra.Command{
 	Use:   "fuzz",
 	Short: "Fuzz URL scheme",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var validInputs [][]byte
+		var validInputs []string
 		var err error
 
 		base, err := cmd.Flags().GetString("base")
@@ -112,7 +112,7 @@ var fuzzCmd = &cobra.Command{
 
 		l.Infof("Attached to %s", app)
 
-		var lastInput []byte
+		var lastInput string
 
 		sess.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
 			l.Infof("Session detached; reason=%s", reason.String())
@@ -122,7 +122,7 @@ var fuzzCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				f.Write(lastInput)
+				f.WriteString(lastInput)
 				return nil
 			}()
 			if err != nil {
@@ -162,13 +162,13 @@ var fuzzCmd = &cobra.Command{
 		_ = script.ExportsCall("setup", method, uiapp, delegate)
 		l.Infof("Finished setup")
 
-		m := mutator.NewMutator([]byte(base), runs, fn, validInputs...)
+		m := mutator.NewMutator(base, runs, fn, validInputs...)
 		ch := m.Mutate()
 
 		for mutated := range ch {
 			lastInput = mutated.Input
 			l.Infof("[%s] %s\n", color.New(color.FgCyan).Sprintf("%s", mutated.Mutation), mutated.Input)
-			_ = script.ExportsCall("fuzz", method, string(mutated.Input))
+			_ = script.ExportsCall("fuzz", method, mutated.Input)
 			if timeout > 0 {
 				time.Sleep(time.Duration(timeout) * time.Second)
 			}

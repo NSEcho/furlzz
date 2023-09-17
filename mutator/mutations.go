@@ -1,10 +1,11 @@
 package mutator
 
 import (
-	"bytes"
+	"strings"
+	"unicode"
 )
 
-type mutateFn func(m *Mutator) []byte
+type mutateFn func(m *Mutator) string
 
 var mutations = map[string]mutateFn{
 	"insert":          insert,
@@ -18,60 +19,46 @@ var mutations = map[string]mutateFn{
 }
 
 // insert inserts random byte at random location inside the input
-func insert(m *Mutator) []byte {
+func insert(m *Mutator) string {
 	inp := m.getFuzzedInput()
 	pos := m.r.Intn(len(inp))
-	char := byte(m.r.Intn(255))
-
-	res := make([]byte, len(inp)+1)
-
-	k := 0
-
-	for i := 0; i < len(inp); i++ {
-		if i == pos {
-			res[k] = char
-			res[k+1] = inp[i]
-			k += 2
-		} else {
-			res[k] = inp[i]
-			k++
+	var char byte
+	for {
+		c := m.r.Intn(unicode.MaxASCII)
+		if unicode.IsPrint(rune(c)) {
+			char = byte(c)
+			break
 		}
 	}
 
-	return res
+	return inp[:pos] + string(char) + inp[pos:]
 }
 
 // del deletes random byte
-func del(m *Mutator) []byte {
+func del(m *Mutator) string {
 	inp := m.getFuzzedInput()
 	pos := m.r.Intn(len(inp))
-	res := make([]byte, len(inp)-1)
-
-	k := 0
-	for i := 0; i < len(inp); i++ {
-		if i == pos {
-			continue
-		}
-		res[k] = inp[i]
-		k++
-	}
-
-	return res
+	return inp[:pos] + inp[pos+1:]
 }
 
 // substitute substitutes byte at random position with random byte
-func substitute(m *Mutator) []byte {
+func substitute(m *Mutator) string {
 	inp := m.getFuzzedInput()
 	pos := m.r.Intn(len(inp))
-	char := byte(m.r.Intn(255))
-
-	res := make([]byte, len(inp))
-
+	var char byte
+	for {
+		c := m.r.Intn(unicode.MaxASCII)
+		if unicode.IsPrint(rune(c)) {
+			char = byte(c)
+			break
+		}
+	}
+	var res string
 	for i, c := range inp {
 		if i == pos {
-			res[i] = char
+			res += string(char)
 		} else {
-			res[i] = c
+			res += string(c)
 		}
 	}
 	return res
@@ -79,7 +66,7 @@ func substitute(m *Mutator) []byte {
 
 // byteOp takes random byte and random position inside the string
 // and do arithmetic operation on them (+, -, *, /)
-func byteOp(m *Mutator) []byte {
+func byteOp(m *Mutator) string {
 	b := make([]byte, 1)
 	m.r.Read(b)
 	inp := m.getFuzzedInput()
@@ -87,21 +74,21 @@ func byteOp(m *Mutator) []byte {
 
 	op := m.r.Intn(4)
 
-	res := make([]byte, len(inp))
+	res := make([]rune, len(inp))
 	for i, r := range inp {
 		if i == pos {
 			switch op {
 			case 0:
-				res[i] = r + b[0]
+				res[i] = r + rune(b[0])
 			case 1:
-				res[i] = r - b[0]
+				res[i] = r - rune(b[0])
 			case 2:
-				res[i] = r * b[0]
+				res[i] = r * rune(b[0])
 			default:
 				if b[0] != 0 {
-					res[i] = r / b[0]
+					res[i] = r / rune(b[0])
 				} else {
-					res[i] = r + b[0]
+					res[i] = r + rune(b[0])
 				}
 			}
 		} else {
@@ -109,12 +96,12 @@ func byteOp(m *Mutator) []byte {
 		}
 	}
 
-	return res
+	return string(res)
 }
 
 // duplicateRange duplicates random range inside the original string random
 // number of times
-func duplicateRange(m *Mutator) []byte {
+func duplicateRange(m *Mutator) string {
 	inp := m.getFuzzedInput()
 
 	start := m.r.Intn(len(inp))
@@ -128,43 +115,29 @@ func duplicateRange(m *Mutator) []byte {
 	}
 
 	rng := inp[start:end]
-	duplicatedBytes := bytes.Repeat(rng, countOfDuplications)
 
-	res := make([]byte, len(inp)+len(duplicatedBytes))
-
-	k := 0
-	for i := 0; i < end; i++ {
-		res[k] = inp[i]
-		k++
-	}
-
-	for i := 0; i < len(duplicatedBytes); i++ {
-		res[k] = duplicatedBytes[i]
-		k++
-	}
-
-	for i := end; i < len(inp); i++ {
-		res[k] = inp[i]
-		k++
-	}
+	res := ""
+	res += inp[:start]
+	res += strings.Repeat(rng, countOfDuplications)
+	res += inp[end:]
 
 	return res
 }
 
 // bitFlip flips the bit at random position inside random location inside input
-func bitFlip(m *Mutator) []byte {
+func bitFlip(m *Mutator) string {
 	inp := m.getFuzzedInput()
 
 	pos := m.r.Intn(len(inp))
 	bitPosition := m.r.Intn(8)
 
-	res := make([]byte, len(inp))
+	res := ""
 
 	for i, r := range inp {
 		if i == pos {
-			res[i] = r ^ (1 << bitPosition)
+			res += string(r ^ (1 << bitPosition))
 		} else {
-			res[i] = r
+			res += string(r)
 		}
 	}
 
@@ -172,19 +145,19 @@ func bitFlip(m *Mutator) []byte {
 }
 
 // bitmask applies random bitmask on random location inside the string
-func bitmask(m *Mutator) []byte {
+func bitmask(m *Mutator) string {
 	inp := m.getFuzzedInput()
 
 	pos := m.r.Intn(len(inp))
 	bm := m.r.Intn(255)
 
-	res := make([]byte, len(inp))
+	res := ""
 
 	for i, r := range inp {
 		if pos == i {
-			res[i] = inp[i] ^ uint8(bm)
+			res += string(inp[i] ^ uint8(bm))
 		} else {
-			res[i] = r
+			res += string(r)
 		}
 	}
 
@@ -192,12 +165,12 @@ func bitmask(m *Mutator) []byte {
 }
 
 // duplicate duplicates original string random number of times (2 < 10)
-func duplicate(m *Mutator) []byte {
+func duplicate(m *Mutator) string {
 	inp := m.getFuzzedInput()
 
 	var count int
 	for count = m.r.Intn(10); count < 1; count = m.r.Intn(10) {
 	}
 
-	return bytes.Repeat(inp, count)
+	return strings.Repeat(inp, count)
 }

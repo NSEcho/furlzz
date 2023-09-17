@@ -29,13 +29,13 @@ func Execute(sc string) error {
 	return rootCmd.Execute()
 }
 
-func readInputs(dirPath string) ([][]byte, error) {
+func readInputs(dirPath string) ([]string, error) {
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		return nil, err
 	}
 
-	var validInputs [][]byte
+	var validInputs []string
 
 	for _, fl := range files {
 		if fl.IsDir() {
@@ -54,13 +54,13 @@ func readInputs(dirPath string) ([][]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		validInputs = append(validInputs, data)
+		validInputs = append(validInputs, string(data))
 	}
 	return validInputs, nil
 }
 
-func crashSHA256(inp []byte) string {
+func crashSHA256(inp string) string {
 	h := sha256.New()
-	h.Write(inp)
+	h.Write([]byte(inp))
 	return fmt.Sprintf("%x", h.Sum(nil))
 }

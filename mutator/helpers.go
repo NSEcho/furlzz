@@ -1,8 +1,8 @@
 package mutator
 
-func (m *Mutator) getFuzzedInput() []byte {
+func (m *Mutator) getFuzzedInput() string {
 	if m.multipleRounds {
-		if len(m.lastInput) == 0 {
+		if m.lastInput == "" {
 			m.lastInput = m.fetchInput()
 		}
 		return m.lastInput
@@ -10,7 +10,7 @@ func (m *Mutator) getFuzzedInput() []byte {
 	return m.fetchInput()
 }
 
-func (m *Mutator) fetchInput() []byte {
+func (m *Mutator) fetchInput() string {
 	if m.fuzzIdx == -1 || len(m.validInputs) == 0 {
 		return m.input
 	}
