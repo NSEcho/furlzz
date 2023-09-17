@@ -1,21 +1,34 @@
 package mutator
 
 import (
+	"bytes"
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
 )
 
-func NewMutator(inp string, runs uint, fnName string, validInputs ...string) *Mutator {
+func NewMutator(inp, app string, runs uint, fnName string, ignoreCrashes bool, validInputs ...string) *Mutator {
+	var crashes []string
+	if ignoreCrashes {
+		c, err := readCrashes(app)
+		if err != nil {
+			panic(fmt.Sprintf("error reading crashes: %v", err))
+		}
+		crashes = c
+	}
+
 	return &Mutator{
 		fuzzIdx:        strings.Index(inp, "FUZZ"),
 		baseURL:        inp,
 		input:          inp,
 		fnName:         fnName,
+		ignoreCrashes:  ignoreCrashes,
 		ch:             make(chan *Mutated, 100),
 		r:              rand.New(rand.NewSource(time.Now().UnixNano())),
 		runs:           runs,
 		validInputs:    validInputs,
+		crashes:        crashes,
 		multipleRounds: false,
 	}
 }
@@ -27,9 +40,11 @@ type Mutator struct {
 	input          string
 	lastInput      string
 	fnName         string
+	ignoreCrashes  bool
 	ch             chan *Mutated
 	r              *rand.Rand
 	validInputs    []string
+	crashes        []string
 	multipleRounds bool
 }
 
@@ -42,19 +57,25 @@ func (m *Mutator) Mutate() <-chan *Mutated {
 	go func() {
 		if m.runs > 0 {
 			for i := 0; i < int(m.runs); i++ {
-				m.mutateAndSend()
+				inp := m.mutateAndSend()
+				for !inp {
+					inp = m.mutateAndSend()
+				}
 			}
 			close(m.ch)
 		} else {
 			for {
-				m.mutateAndSend()
+				inp := m.mutateAndSend()
+				for !inp {
+					inp = m.mutateAndSend()
+				}
 			}
 		}
 	}()
 	return m.ch
 }
 
-func (m *Mutator) mutateAndSend() {
+func (m *Mutator) mutateAndSend() bool {
 	var mutatedInput string
 	var method string
 	mut := m.r.Intn(len(mutations) + 1)
@@ -92,6 +113,15 @@ func (m *Mutator) mutateAndSend() {
 		mutatedInput = applyFunctions[m.fnName](mutatedInput)
 	}
 
+	if m.ignoreCrashes && len(m.crashes) > 0 {
+		for _, crash := range m.crashes {
+			crashInp := strings.Replace(crash, m.baseURL[:m.fuzzIdx], "", -1)
+			if bytes.Equal([]byte(crashInp), []byte(mutatedInput)) {
+				return false
+			}
+		}
+	}
+
 	if m.fuzzIdx == -1 || len(m.validInputs) == 0 {
 		m.ch <- &Mutated{
 			Input:    mutatedInput,
@@ -104,4 +134,5 @@ func (m *Mutator) mutateAndSend() {
 		}
 	}
 	m.lastInput = mutatedInput
+	return true
 }

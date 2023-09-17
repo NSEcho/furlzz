@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"github.com/fatih/color"
 	"github.com/frida/frida-go/frida"
 	"github.com/nsecho/furlzz/mutator"
@@ -77,6 +79,11 @@ var fuzzCmd = &cobra.Command{
 			return err
 		}
 
+		crash, err := cmd.Flags().GetBool("crash")
+		if err != nil {
+			return err
+		}
+
 		l.Infof("Fuzzing base URL \"%s\"", base)
 		if strings.Contains(base, "FUZZ") {
 			l.Infof("Read %d inputs from %s directory",
@@ -123,7 +130,7 @@ var fuzzCmd = &cobra.Command{
 			l.Infof("Session detached; reason=%s", reason.String())
 			out := crashSHA256(lastInput)
 			err := func() error {
-				f, err := os.Create(out)
+				f, err := os.Create(fmt.Sprintf("fcrash_%s_%s", app, out))
 				if err != nil {
 					return err
 				}
@@ -167,13 +174,17 @@ var fuzzCmd = &cobra.Command{
 		_ = script.ExportsCall("setup", method, uiapp, delegate, scene)
 		l.Infof("Finished setup")
 
-		m := mutator.NewMutator(base, runs, fn, validInputs...)
+		m := mutator.NewMutator(base, app, runs, fn, crash, validInputs...)
 		ch := m.Mutate()
 
 		for mutated := range ch {
 			lastInput = mutated.Input
 			l.Infof("[%s] %s\n", color.New(color.FgCyan).Sprintf("%s", mutated.Mutation), mutated.Input)
-			_ = script.ExportsCall("fuzz", method, mutated.Input)
+			ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
+			if err := script.ExportsCallWithContext(ctx, "fuzz", method, mutated.Input); err == frida.ErrContextCancelled {
+				sess.Detach()
+				break
+			}
 			if timeout > 0 {
 				time.Sleep(time.Duration(timeout) * time.Second)
 			}
@@ -191,6 +202,7 @@ func init() {
 	fuzzCmd.Flags().StringP("delegate", "d", "", "if the method is scene_activity, you need to specify UISceneDelegate class")
 	fuzzCmd.Flags().StringP("uiapp", "u", "", "UIApplication name")
 	fuzzCmd.Flags().StringP("scene", "s", "", "scene class name")
+	fuzzCmd.Flags().BoolP("crash", "c", false, "ignore previous crashes")
 	fuzzCmd.Flags().UintP("runs", "r", 0, "number of runs")
 	fuzzCmd.Flags().UintP("timeout", "t", 1, "sleep X seconds between each case")
 
