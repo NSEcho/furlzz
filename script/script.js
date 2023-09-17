@@ -29,19 +29,19 @@ rpc.exports = {
     setup(method, appName, delegateName) {
         switch (method) {
             case "delegate":
-                    if (delegateName != "" ) {
+                    if (!delegateName) {
                         delegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
                     } else {
                         delegate = ObjC.Object(ObjC.chooseSync(AppDelegate)[0]);
                     }
-                    if (appName != "") {
+                    if (!appName) {
                         app = ObjC.Object(ObjC.chooseSync(ObjC.classes[appName])[0]);
                     } else {
                         app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
                     }
                 break;
             case "app":
-                if (appName != "") {
+                if (!appName) {
                     app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
                 } else {
                     app = ObjC.Object(ObjC.chooseSync(ObjC.classes[appName])[0]);
