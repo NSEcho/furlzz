@@ -26,8 +26,11 @@ func NewSession(sessionFile string) (*Session, error) {
 type Session struct {
 	App      string `yaml:"app"`
 	Base     string `yaml:"base"`
+	Delegate string `yaml:"delegate"`
 	Function string `yaml:"fn"`
 	Method   string `yaml:"method"`
+	Scene    string `yaml:"scene"`
+	UIApp    string `yaml:"uiapp"`
 }
 
 func (s *Session) WriteToFile() error {

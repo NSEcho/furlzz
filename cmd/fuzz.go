@@ -145,8 +145,11 @@ var fuzzCmd = &cobra.Command{
 			s := Session{
 				App:      app,
 				Base:     base,
+				Delegate: delegate,
 				Function: fn,
 				Method:   method,
+				Scene:    scene,
+				UIApp:    uiapp,
 			}
 			if err := s.WriteToFile(); err != nil {
 				l.Errorf("Error writing session file: %v", err)

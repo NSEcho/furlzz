@@ -73,6 +73,8 @@ var crashCmd = &cobra.Command{
 
 		time.Sleep(2 * time.Second)
 
+		_ = script.ExportsCall("setup", s.Method, s.UIApp, s.Delegate, s.Scene)
+
 		_ = script.ExportsCall("fuzz", s.Method, string(input))
 
 		return nil
