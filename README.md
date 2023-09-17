@@ -17,21 +17,25 @@ To manually install furlzz, do:
 # Usage
 
 ```bash
-$ furlzz --help
-Fuzz iOS URL schemes
+$ furlzz fuzz --help
+Fuzz URL scheme
 
 Usage:
-  furlzz [command]
-
-Available Commands:
-  crash       Run the application with crash
-  fuzz        Fuzz URL scheme
-  help        Help about any command
+  furlzz fuzz [flags]
 
 Flags:
-  -h, --help   help for furlzz
-
-Use "furlzz [command] --help" for more information about a command.
+  -a, --app string        Application name to attach to (default "Gadget")
+  -b, --base string       base URL to fuzz
+  -c, --crash             ignore previous crashes
+  -d, --delegate string   if the method is scene_activity, you need to specify UISceneDelegate class
+  -f, --function string   apply the function to mutated input (url, base64)
+  -h, --help              help for fuzz
+  -i, --input string      path to input directory
+  -m, --method string     method of opening url (delegate, app) (default "delegate")
+  -r, --runs uint         number of runs
+  -s, --scene string      scene class name
+  -t, --timeout uint      sleep X seconds between each case (default 1)
+  -u, --uiapp string      UIApplication name
 ```
 
 There are basically two ways you can go with fuzzing using `furlzz`:
