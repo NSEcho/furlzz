@@ -128,9 +128,9 @@ var fuzzCmd = &cobra.Command{
 
 		sess.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
 			l.Infof("Session detached; reason=%s", reason.String())
-			out := crashSHA256(lastInput)
+			out := fmt.Sprintf("fcrash_%s_%s", app, crashSHA256(lastInput))
 			err := func() error {
-				f, err := os.Create(fmt.Sprintf("fcrash_%s_%s", app, out))
+				f, err := os.Create(out)
 				if err != nil {
 					return err
 				}
