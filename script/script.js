@@ -2,7 +2,7 @@ const {
     AppDelegate,
     UIApplication,
     NSURL,
-    NSDictionary,
+    NSMutableDictionary,
     UIWindowScene,
     NSUserActivity,
     UIOpenURLContext,
@@ -15,7 +15,7 @@ var delegate = null;
 var shared = null;
 var scene = null;
 var sceneDelegate = null;
-var opts = NSDictionary.alloc().init();
+var opts = NSMutableDictionary.alloc().init();
 
 var NSUserActivityTypeBrowsingWeb = null;
 var activity = null;
@@ -68,6 +68,7 @@ rpc.exports = {
         var ur = NSURL.URLWithString_(url);
         switch (method) {
             case "delegate":
+                opts.setValue_forKey_(0, "UIApplicationOpenURLOptionsOpenInPlaceKey");
                 delegate.application_openURL_options_(app, ur, opts);
                 break;
             case "app":
