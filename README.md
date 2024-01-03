@@ -72,7 +72,7 @@ encode on the mutated input while the second one generates base64 from it.
 
 # URL open methods
 
-Right now furlzz supports two methods of opening URLs:
+Right now furlzz supports a couple of methods of opening URLs:
 * `delegate` when the application uses `-[AppDelegate application:openURL:options:]`
 * `app` when the application is using `-[UIApplication openURL:]`
 * `scene_activity` - when the application is using `-[UISceneDelegate scene:continueUserActivity]`
