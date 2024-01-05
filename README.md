@@ -4,7 +4,8 @@ furlzz is a small fuzzer written to test out iOS URL schemes.
 It does so by attaching to the application using Frida and based on the input/seed it mutates the data 
 and tries to open the mutated URL. furlzz works in-process, meaning you aren't actually opening 
 the URL using apps such as SpringBoard. furlzz supports universal links which are being used with 
-`scene:continueUserActivity`.
+`scene:continueUserActivity` and on some applications it is worth trying to use `app` as method because that 
+can work as well.
 
 # Installation
 
