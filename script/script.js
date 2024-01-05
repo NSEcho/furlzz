@@ -81,7 +81,9 @@ rpc.exports = {
                 delegate.application_openURL_options_(app, ur, opts);
                 break;
             case "app":
+                ObjC.schedule(ObjC.mainQueue, () => {
                 app.openURL_(ur);
+                });    
                 break;
             case "scene_activity":
                 activity.setWebPageURL_(ur);
