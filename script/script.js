@@ -27,7 +27,7 @@ var ctx = null;
 var ctxOpts = null;
 
 rpc.exports = {
-    setup(method, appName, delegateName, sceneName) {
+    setup_fuzz(method, appName, delegateName, sceneName) {
         switch (method) {
             case "delegate":
                     if (!delegateName) {
@@ -82,8 +82,8 @@ rpc.exports = {
                 break;
             case "app":
                 ObjC.schedule(ObjC.mainQueue, () => {
-                app.openURL_(ur);
-                });    
+                    app.openURL_(ur);
+                });
                 break;
             case "scene_activity":
                 activity.setWebPageURL_(ur);

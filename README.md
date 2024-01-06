@@ -1,5 +1,7 @@
 # furlzz
 
+![Running against Telegram](telegram.png)
+
 furlzz is a small fuzzer written to test out iOS URL schemes.
 It does so by attaching to the application using Frida and based on the input/seed it mutates the data 
 and tries to open the mutated URL. furlzz works in-process, meaning you aren't actually opening 
@@ -57,7 +59,7 @@ encode on the mutated input while the second one generates base64 from it.
 6. Adjust timeout if you would like to go with slower fuzzing
 7. If the crash happen, replay it with `furlzz crash` passing created session and crash files
 
-![Running against Telegram](telegram.png)
+
 
 # Mutations
 

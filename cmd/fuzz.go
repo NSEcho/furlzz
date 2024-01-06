@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"github.com/fatih/color"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/frida/frida-go/frida"
+	"github.com/nsecho/furlzz/internal/tui"
 	"github.com/nsecho/furlzz/mutator"
 	"github.com/spf13/cobra"
 	"os"
@@ -24,17 +24,10 @@ var fuzzCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if base == "" {
-			return errors.New("base URL cannot be empty")
-		}
 
 		input, err := cmd.Flags().GetString("input")
 		if err != nil {
 			return err
-		}
-
-		if input == "" && strings.Contains(base, "FUZZ") {
-			return errors.New("input directory cannot be empty when using FUZZ keyword")
 		}
 
 		if strings.Contains(base, "FUZZ") {
@@ -84,116 +77,164 @@ var fuzzCmd = &cobra.Command{
 			return err
 		}
 
-		l.Infof("Fuzzing base URL \"%s\"", base)
-		if strings.Contains(base, "FUZZ") {
-			l.Infof("Read %d inputs from %s directory",
-				len(validInputs), input)
-		} else {
-			l.Infof("Fuzzing base URL")
-		}
-
-		if runs == 0 {
-			l.Infof("Fuzzing indefinitely")
-		} else {
-			l.Infof("Fuzzing with %d mutated inputs", runs)
-		}
-
-		if timeout != 0 {
-			l.Infof("Sleeping %d seconds between each fuzz case", timeout)
-		}
-
 		app, err := cmd.Flags().GetString("app")
 		if err != nil {
 			return err
 		}
 
-		if app == "" {
-			return errors.New("error: app cannot be empty")
-		}
+		m := tui.NewModel()
+		m.Crash = crash
+		m.Runs = runs
+		m.Timeout = timeout
+		m.App = app
+		m.Device = "usb"
+		m.Function = fn
+		m.Method = method
+		m.Delegate = delegate
+		m.UIApp = uiapp
+		m.Scene = scene
+		m.Base = base
+		m.Input = input
+		m.ValidInputs = validInputs
 
-		dev := frida.USBDevice()
-		if dev == nil {
-			return errors.New("no USB device detected")
-		}
-		defer dev.Clean()
+		p := tea.NewProgram(m)
 
-		sess, err := dev.Attach(app, nil)
-		if err != nil {
-			return err
-		}
+		var sess *frida.Session = nil
+		var script *frida.Script = nil
+		hasCrashed := false
 
-		l.Infof("Attached to %s", app)
-
-		var lastInput string
-
-		sess.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
-			l.Infof("Session detached; reason=%s", reason.String())
-			out := fmt.Sprintf("fcrash_%s_%s", app, crashSHA256(lastInput))
-			err := func() error {
-				f, err := os.Create(out)
-				if err != nil {
-					return err
-				}
-				f.WriteString(lastInput)
-				return nil
-			}()
-			if err != nil {
-				l.Errorf("Error writing crash file: %v", err)
-			} else {
-				l.Infof("Written crash to: %s", out)
+		go func() {
+			<-m.DetachCH
+			sendStats(p, "Unloading script")
+			if script != nil {
+				script.Unload()
 			}
-			s := Session{
-				App:      app,
-				Base:     base,
-				Delegate: delegate,
-				Function: fn,
-				Method:   method,
-				Scene:    scene,
-				UIApp:    uiapp,
-			}
-			if err := s.WriteToFile(); err != nil {
-				l.Errorf("Error writing session file: %v", err)
-			} else {
-				l.Infof("Written session file")
-			}
-			os.Exit(1)
-		})
-
-		script, err := sess.CreateScript(scriptContent)
-		if err != nil {
-			return err
-		}
-
-		script.On("message", func(message string) {
-			l.Infof("script output: %s", message)
-		})
-
-		if err := script.Load(); err != nil {
-			return err
-		}
-
-		l.Infof("Loaded script")
-
-		_ = script.ExportsCall("setup", method, uiapp, delegate, scene)
-		l.Infof("Finished setup")
-
-		m := mutator.NewMutator(base, app, runs, fn, crash, validInputs...)
-		ch := m.Mutate()
-
-		for mutated := range ch {
-			lastInput = mutated.Input
-			l.Infof("[%s] %s\n", color.New(color.FgCyan).Sprintf("%s", mutated.Mutation), mutated.Input)
-			ctx, _ := context.WithTimeout(context.Background(), 5*time.Second)
-			if err := script.ExportsCallWithContext(ctx, "fuzz", method, mutated.Input); err == frida.ErrContextCancelled {
+			sendStats(p, "Detaching session")
+			if sess != nil {
 				sess.Detach()
-				break
 			}
-			if timeout > 0 {
-				time.Sleep(time.Duration(timeout) * time.Second)
+
+		}()
+
+		go func() {
+			if base == "" {
+				sendErr(p, "Base cannot be empty")
+				return
 			}
-		}
+
+			if input == "" && strings.Contains(base, "FUZZ") {
+				sendErr(p, "Input directory cannot be empty")
+				return
+			}
+
+			if app == "" {
+				sendErr(p, "App cannot be empty")
+				return
+			}
+
+			dev := frida.USBDevice()
+			if dev == nil {
+				sendErr(p, "No USB device detected")
+				return
+			}
+			defer dev.Clean()
+
+			sendStats(p, "Attached to USB device")
+			sendStats(p, fmt.Sprintf("Reading inputs from %s", input))
+
+			sess, err = dev.Attach(app, nil)
+			if err != nil {
+				sendErr(p, err.Error())
+				return
+			}
+
+			sendStats(p, fmt.Sprintf("Attached to %s", app))
+
+			var lastInput string
+
+			sess.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
+				if hasCrashed {
+					sendStats(p, fmt.Sprintf("Session detached; reason=%s", reason.String()))
+					out := fmt.Sprintf("fcrash_%s_%s", app, crashSHA256(lastInput))
+					err := func() error {
+						f, err := os.Create(out)
+						if err != nil {
+							return err
+						}
+						f.WriteString(lastInput)
+						return nil
+					}()
+					if err != nil {
+						sendErr(p, fmt.Sprintf("Could not write crash file: %s", err.Error()))
+					} else {
+						sendStats(p, fmt.Sprintf("Written crash to: %s", out))
+					}
+					s := Session{
+						App:      app,
+						Base:     base,
+						Delegate: delegate,
+						Function: fn,
+						Method:   method,
+						Scene:    scene,
+						UIApp:    uiapp,
+					}
+					if err := s.WriteToFile(); err != nil {
+						sendErr(p, fmt.Sprintf("Could not write session file: %s", err.Error()))
+					} else {
+						sendStats(p, "Written session file")
+					}
+				}
+			})
+
+			script, err = sess.CreateScript(scriptContent)
+			if err != nil {
+				sendErr(p, fmt.Sprintf("Could not create script: %s", err.Error()))
+				return
+			}
+
+			script.On("message", func(message string) {
+				sendStats(p, fmt.Sprintf("Script output: %s", message))
+			})
+
+			if err := script.Load(); err != nil {
+				sendErr(p, fmt.Sprintf("Could not load script: %s", err.Error()))
+				return
+			}
+
+			sendStats(p, "Script loaded")
+
+			_ = script.ExportsCall("setup_fuzz", method, uiapp, delegate, scene)
+			sendStats(p, "Finished fuzz setup")
+
+			mut := mutator.NewMutator(base, app, runs, fn, crash, validInputs...)
+			ch := mut.Mutate()
+
+			for mutated := range ch {
+				lastInput = mutated.Input
+				p.Send(tui.MutatedMsg(mutated))
+				ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+				if err := script.ExportsCallWithContext(ctx, "fuzz", method, mutated.Input); err == frida.ErrContextCancelled {
+					sess.Detach()
+					break
+				}
+				if timeout > 0 {
+					time.Sleep(time.Duration(timeout) * time.Second)
+				}
+			}
+		}()
+
+		p.Run()
+
 		return nil
 	},
+}
+
+func sendStats(p *tea.Program, msg string) {
+	p.Send(tui.StatsMsg(msg))
+}
+
+func sendErr(p *tea.Program, msg string) {
+	p.Send(tui.ErrMsg(msg))
 }
 
 func init() {
