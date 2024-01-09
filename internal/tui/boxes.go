@@ -11,5 +11,5 @@ Base:%s`
 var middleBox = `Current run:%d
 Total runs:%s
 Timeout:%d
-Input:%s
-Op:%s`
+Op:%s
+Input:%s`
