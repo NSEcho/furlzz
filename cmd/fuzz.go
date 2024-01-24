@@ -3,14 +3,15 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/frida/frida-go/frida"
 	"github.com/nsecho/furlzz/internal/tui"
 	"github.com/nsecho/furlzz/mutator"
 	"github.com/spf13/cobra"
-	"os"
-	"strings"
-	"time"
 )
 
 var fuzzCmd = &cobra.Command{
@@ -214,6 +215,7 @@ var fuzzCmd = &cobra.Command{
 				p.Send(tui.MutatedMsg(mutated))
 				ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
 				if err := script.ExportsCallWithContext(ctx, "fuzz", method, mutated.Input); err == frida.ErrContextCancelled {
+					hasCrashed = true
 					sess.Detach()
 					break
 				}
