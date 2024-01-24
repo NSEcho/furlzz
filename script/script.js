@@ -69,6 +69,17 @@ rpc.exports = {
                 ctx = UIOpenURLContext.alloc().init();
                 ctxOpts = UISceneOpenURLOptions.alloc().init();
                 break;
+            case "delegate_activity":
+                NSUserActivityTypeBrowsingWeb = ObjC.Object(Memory.readPointer(Module.findExportByName(null, "NSUserActivityTypeBrowsingWeb")));
+                activity = NSUserActivity.alloc().initWithActivityType_(NSUserActivityTypeBrowsingWeb);
+                delegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
+                shared = ObjC.Object(UIApplication.sharedApplication());
+                if (!appName) {
+                    app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
+                } else {
+                    app = ObjC.Object(ObjC.chooseSync(ObjC.classes[appName])[0]);
+                }
+                break;
             default:
                 return "method not implemented";
         }
@@ -99,6 +110,13 @@ rpc.exports = {
                 ObjC.schedule(ObjC.mainQueue, () => {
                     sceneDelegate.scene_openURLContexts_(scene, setCtx);
                 });
+                break;
+            case "delegate_activity":
+                activity.setWebPageURL_(ur);
+
+                ObjC.schedule(ObjC.mainQueue, () => {
+                    delegate.application_continueUserActivity_restorationHandler_(app,activity,activity);
+                })
                 break;
             default:
                 return "method not implemented";

@@ -6,7 +6,7 @@ furlzz is a small fuzzer written to test out iOS URL schemes.
 It does so by attaching to the application using Frida and based on the input/seed it mutates the data 
 and tries to open the mutated URL. furlzz works in-process, meaning you aren't actually opening 
 the URL using apps such as SpringBoard. furlzz supports universal links which are being used with 
-`scene:continueUserActivity` and on some applications it is worth trying to use `app` as method because that 
+`scene:continueUserActivity`. On some applications it is worth trying to use `app` as method for custom links, because that 
 can work as well.
 
 # Installation
@@ -80,11 +80,13 @@ Right now furlzz supports a couple of methods of opening URLs:
 * `app` when the application is using `-[UIApplication openURL:]`
 * `scene_activity` - when the application is using `-[UISceneDelegate scene:continueUserActivity]`
 * `scene_context` when the application is using `-[UISceneDelegate scene:openURLContexts:]`
+* `delegate_activity` when the application is using `-[AppDelegate application:continueUserActivity:restorationHandler]`
 
 # Additional flags
 
 * For the method of `scene_activity` you need to pass the `UISceneDelegate` class name
 * For the method of `delegate` you need to pass the `AppDelegate` class name
 * For the method of `scene_context` you need to pass `UISceneDelegate` class name
+* For the method of `delegate_activity` you need to pass `AppDelegate` class name
 
 PRs are more than welcome to extend any functionality inside the furlzz
