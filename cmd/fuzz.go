@@ -105,19 +105,6 @@ var fuzzCmd = &cobra.Command{
 		hasCrashed := false
 
 		go func() {
-			<-m.DetachCH
-			sendStats(p, "Unloading script")
-			if script != nil {
-				script.Unload()
-			}
-			sendStats(p, "Detaching session")
-			if sess != nil {
-				sess.Detach()
-			}
-
-		}()
-
-		go func() {
 			if base == "" {
 				sendErr(p, "Base cannot be empty")
 				return
@@ -154,6 +141,8 @@ var fuzzCmd = &cobra.Command{
 			var lastInput string
 
 			sess.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
+				// Add sleep here so that we can wait for the context to get cancelled
+				time.Sleep(3 * time.Second)
 				if hasCrashed {
 					sendStats(p, fmt.Sprintf("Session detached; reason=%s", reason.String()))
 					out := fmt.Sprintf("fcrash_%s_%s", app, crashSHA256(lastInput))
@@ -185,6 +174,7 @@ var fuzzCmd = &cobra.Command{
 						sendStats(p, "Written session file")
 					}
 				}
+				p.Send(tui.SessionDetached{})
 			})
 
 			script, err = sess.CreateScript(scriptContent)
@@ -216,7 +206,6 @@ var fuzzCmd = &cobra.Command{
 				ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
 				if err := script.ExportsCallWithContext(ctx, "fuzz", method, mutated.Input); err == frida.ErrContextCancelled {
 					hasCrashed = true
-					sess.Detach()
 					break
 				}
 				if timeout > 0 {
