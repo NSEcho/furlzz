@@ -96,6 +96,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	b := ""
+	for i := 0; i < len(m.Base); i++ {
+		if i != 0 && i%28 == 0 {
+			b += "\n"
+		}
+		b += string(m.Base[i])
+	}
+
 	s := ""
 	box1 := leftBoxContainer.Render(renderBox(leftBox,
 		stripOrNA(m.App, 37),
@@ -104,7 +112,7 @@ func (m Model) View() string {
 		stripOrNA(m.Method, 37),
 		stripOrNA(m.UIApp, 37),
 		stripOrNA(m.Scene, 37),
-		stripOrNA(m.Base, 37)))
+		b))
 
 	totalRuns := ""
 	if m.Runs == 0 {
@@ -113,7 +121,15 @@ func (m Model) View() string {
 		totalRuns = strconv.Itoa(int(m.Runs))
 	}
 
-	box2 := rightBoxContainer.Render(renderBox(middleBox, m.ctr, totalRuns, m.Timeout, stripOrNA(m.op, 47), stripOrNA(m.ur, 47)))
+	inp := ""
+	for i := 0; i < len(m.ur); i++ {
+		if i != 0 && i%40 == 0 {
+			inp += "\n"
+		}
+		inp += string(m.ur[i])
+	}
+
+	box2 := rightBoxContainer.Render(renderBox(middleBox, m.ctr, totalRuns, m.Timeout, stripOrNA(m.op, 47), inp))
 
 	s += lipgloss.JoinHorizontal(lipgloss.Top, box1, box2)
 
@@ -134,8 +150,16 @@ func (m Model) View() string {
 	// Add previous messages in reversed order
 	reversed := make([]string, len(m.messages))
 	for i := len(m.messages) - 1; i >= 0; i-- {
-		if len(m.messages[i]) > 60 {
-			reversed[len(m.messages)-1-i] = m.messages[i][:57] + "..."
+		if len(m.messages[i]) > 88 {
+			// Add code here to wrap it
+			msg := ""
+			for j := 0; j < len(m.messages[i]); j++ {
+				if j != 0 && j%89 == 0 {
+					msg += "\n"
+				}
+				msg += string(m.messages[i][j])
+			}
+			reversed[len(m.messages)-1-i] = msg
 		} else {
 			reversed[len(m.messages)-1-i] = m.messages[i]
 		}

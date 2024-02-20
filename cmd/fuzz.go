@@ -143,6 +143,7 @@ var fuzzCmd = &cobra.Command{
 			sess.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
 				// Add sleep here so that we can wait for the context to get cancelled
 				time.Sleep(3 * time.Second)
+				defer p.Send(tui.SessionDetached{})
 				if hasCrashed {
 					sendStats(p, fmt.Sprintf("Session detached; reason=%s", reason.String()))
 					out := fmt.Sprintf("fcrash_%s_%s", app, crashSHA256(lastInput))
@@ -151,8 +152,8 @@ var fuzzCmd = &cobra.Command{
 						if err != nil {
 							return err
 						}
-						f.WriteString(lastInput)
-						return nil
+						_, err = f.WriteString(lastInput)
+						return err
 					}()
 					if err != nil {
 						sendErr(p, fmt.Sprintf("Could not write crash file: %s", err.Error()))
@@ -174,7 +175,6 @@ var fuzzCmd = &cobra.Command{
 						sendStats(p, "Written session file")
 					}
 				}
-				p.Send(tui.SessionDetached{})
 			})
 
 			script, err = sess.CreateScript(scriptContent)
@@ -214,9 +214,8 @@ var fuzzCmd = &cobra.Command{
 			}
 		}()
 
-		p.Run()
-
-		return nil
+		_, err = p.Run()
+		return err
 	},
 }
 
