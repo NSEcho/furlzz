@@ -90,3 +90,7 @@ Right now furlzz supports a couple of methods of opening URLs:
 * For the method of `delegate_activity` you need to pass `AppDelegate` class name
 
 PRs are more than welcome to extend any functionality inside the furlzz
+
+# Crashes found
+
+* [Bear 2.0.10](https://www.ns-echo.com/posts/furlzz_fuzzing_bear.html)
