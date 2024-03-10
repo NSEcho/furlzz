@@ -83,6 +83,11 @@ var fuzzCmd = &cobra.Command{
 			return err
 		}
 
+		network, err := cmd.Flags().GetString("network")
+		if err != nil {
+			return err
+		}
+
 		m := tui.NewModel()
 		m.Crash = crash
 		m.Runs = runs
@@ -120,22 +125,40 @@ var fuzzCmd = &cobra.Command{
 				return
 			}
 
-			dev := frida.USBDevice()
-			if dev == nil {
-				sendErr(p, "No USB device detected")
-				return
-			}
-			defer dev.Clean()
+			//Adding support for accessing remote devices, else default is USB
+			if network!=""{
+				mgr := frida.NewDeviceManager()
+				ropts := frida.NewRemoteDeviceOptions()
+				dev, err := mgr.AddRemoteDevice(network, ropts)
+				if err != nil {
+					sendErr(p,err.Error())
+					return
+				}
+				defer dev.Clean()
 
-			sendStats(p, "Attached to USB device")
+				sess, err = dev.Attach(app, nil)
+				if err != nil {
+					sendErr(p, err.Error())
+					return
+				}
+				sendStats(p, "Attached to Remote device")	
+			}else{
+				dev := frida.USBDevice()
+				if dev == nil {
+					sendErr(p, "No USB device detected")
+					return
+				}
+				defer dev.Clean()	
+				
+				sess, err = dev.Attach(app, nil)
+				if err != nil {
+					sendErr(p, err.Error())
+					return
+				}
+				sendStats(p, "Attached to USB device")	
+			}
+			
 			sendStats(p, fmt.Sprintf("Reading inputs from %s", input))
-
-			sess, err = dev.Attach(app, nil)
-			if err != nil {
-				sendErr(p, err.Error())
-				return
-			}
-
 			sendStats(p, fmt.Sprintf("Attached to %s", app))
 
 			var lastInput string
@@ -239,6 +262,7 @@ func init() {
 	fuzzCmd.Flags().BoolP("crash", "c", false, "ignore previous crashes")
 	fuzzCmd.Flags().UintP("runs", "r", 0, "number of runs")
 	fuzzCmd.Flags().UintP("timeout", "t", 1, "sleep X seconds between each case")
+	fuzzCmd.Flags().StringP("network", "n", "", "Connect to Device Remotely")
 
 	rootCmd.AddCommand(fuzzCmd)
 }
