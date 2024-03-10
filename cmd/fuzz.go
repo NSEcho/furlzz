@@ -126,12 +126,12 @@ var fuzzCmd = &cobra.Command{
 			}
 
 			//Adding support for accessing remote devices, else default is USB
-			if network!=""{
+			if network != "" {
 				mgr := frida.NewDeviceManager()
 				ropts := frida.NewRemoteDeviceOptions()
 				dev, err := mgr.AddRemoteDevice(network, ropts)
 				if err != nil {
-					sendErr(p,err.Error())
+					sendErr(p, err.Error())
 					return
 				}
 				defer dev.Clean()
@@ -141,23 +141,23 @@ var fuzzCmd = &cobra.Command{
 					sendErr(p, err.Error())
 					return
 				}
-				sendStats(p, "Attached to Remote device")	
-			}else{
+				sendStats(p, "Attached to Remote device")
+			} else {
 				dev := frida.USBDevice()
 				if dev == nil {
 					sendErr(p, "No USB device detected")
 					return
 				}
-				defer dev.Clean()	
-				
+				defer dev.Clean()
+
 				sess, err = dev.Attach(app, nil)
 				if err != nil {
 					sendErr(p, err.Error())
 					return
 				}
-				sendStats(p, "Attached to USB device")	
+				sendStats(p, "Attached to USB device")
 			}
-			
+
 			sendStats(p, fmt.Sprintf("Reading inputs from %s", input))
 			sendStats(p, fmt.Sprintf("Attached to %s", app))
 
