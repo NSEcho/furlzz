@@ -39,6 +39,7 @@ Flags:
   -s, --scene string      scene class name
   -t, --timeout uint      sleep X seconds between each case (default 1)
   -u, --uiapp string      UIApplication name
+  -n, --network string    Connect to remote device (default is "USB")
 ```
 
 There are basically two ways you can go with fuzzing using `furlzz`:
