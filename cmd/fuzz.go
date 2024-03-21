@@ -136,6 +136,8 @@ var fuzzCmd = &cobra.Command{
 				}
 				defer dev.Clean()
 
+				//Spawn app only if not in foreground
+				spawnApp(dev, app, p, false)
 				sess, err = dev.Attach(app, nil)
 				if err != nil {
 					sendErr(p, err.Error())
@@ -150,6 +152,8 @@ var fuzzCmd = &cobra.Command{
 				}
 				defer dev.Clean()
 
+				//Spawn app only if not in foreground
+				spawnApp(dev, app, p, false)
 				sess, err = dev.Attach(app, nil)
 				if err != nil {
 					sendErr(p, err.Error())
@@ -248,6 +252,56 @@ func sendStats(p *tea.Program, msg string) {
 
 func sendErr(p *tea.Program, msg string) {
 	p.Send(tui.ErrMsg(msg))
+}
+
+func spawnApp(dev *frida.Device, app string, p *tea.Program, toSpawn bool) {
+
+	process, err := dev.FindProcessByName(app, frida.ScopeMinimal)
+	if err != nil {
+		sendErr(p, err.Error())
+		return
+	}
+	//If app is not open, Spawn it
+	if process.PID() < 0 {
+		toSpawn = true
+	} else if process.PID() > 0 {
+		//If app is in process but not in foreground, Spawn it
+		// sometimes crash makes app go in the background
+		frontApp, err := dev.FrontmostApplication(frida.ScopeMinimal)
+		if err != nil {
+			sendErr(p, err.Error())
+			//We don't need to exit/return here, since frida throws generic error if no app is in foreground
+		}
+		if frontApp == nil || frontApp.Name() != process.Name() {
+			//need to kill app in foreground, else fuzzing seems to stop for some reason
+			dev.Kill(process.PID())
+			toSpawn = true
+		}
+	}
+
+	if toSpawn == true {
+		fopts := frida.NewSpawnOptions()
+		fopts.SetArgv([]string{
+			"",
+		})
+		appsList, err := dev.EnumerateApplications("", frida.ScopeMinimal)
+		if err != nil {
+			return
+		}
+
+		for i := 0; i < int(len(appsList)); i++ {
+			appName := appsList[i]
+			if appName.Name() == app {
+				pid, err := dev.Spawn(appName.Identifier(), fopts)
+				if err != nil {
+					sendErr(p, err.Error())
+					return
+				}
+				dev.Resume(pid)
+				break
+			}
+		}
+	}
 }
 
 func init() {
