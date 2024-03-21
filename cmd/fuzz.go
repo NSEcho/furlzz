@@ -255,7 +255,6 @@ func sendErr(p *tea.Program, msg string) {
 }
 
 func spawnApp(dev *frida.Device, app string, p *tea.Program, toSpawn bool) {
-
 	process, err := dev.FindProcessByName(app, frida.ScopeMinimal)
 	if err != nil {
 		sendErr(p, err.Error())
