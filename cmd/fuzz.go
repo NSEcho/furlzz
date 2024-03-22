@@ -265,15 +265,13 @@ func spawnApp(dev *frida.Device, app string, p *tea.Program, toSpawn bool) {
 		toSpawn = true
 	} else if process.PID() > 0 {
 		//If app is in process but not in foreground, Spawn it
-		// sometimes crash makes app go in the background
+		//sometimes crash makes app go in the background
 		frontApp, err := dev.FrontmostApplication(frida.ScopeMinimal)
 		if err != nil {
-			sendErr(p, err.Error())
-			//We don't need to exit/return here, since frida throws generic error if no app is in foreground
+			//We don't need to exit/return here, since frida throws generic error if no app is in foreground sending as stats
+			sendStats(p, err.Error())
 		}
 		if frontApp == nil || frontApp.Name() != process.Name() {
-			//need to kill app in foreground, else fuzzing seems to stop for some reason
-			dev.Kill(process.PID())
 			toSpawn = true
 		}
 	}
