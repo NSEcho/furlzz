@@ -265,20 +265,12 @@ func spawnApp(dev *frida.Device, app string, p *tea.Program, toSpawn bool) {
 		toSpawn = true
 	} else if process.PID() > 0 {
 		//If app is in process but not in foreground, Spawn it
-<<<<<<< HEAD
-		frontApp, err := dev.FrontmostApplication(frida.ScopeMinimal)
-		if err != nil {
-			sendStats(p, err.Error())
-			//We don't need to exit/return here, since frida throws generic error if no app is in foreground.
-=======
-		//sometimes crash makes app go in the background
 		frontApp, err := dev.FrontmostApplication(frida.ScopeMinimal)
 		if err != nil {
 			//We don't need to exit/return here, since frida throws generic error if no app is in foreground sending as stats
 			sendStats(p, err.Error())
->>>>>>> origin/addinSpawnsupport
 		}
-		//if foreground app does not match intended app, spawn it
+		//Checking if foreground app does not match intended app, then we spawn it
 		if frontApp == nil || frontApp.Name() != process.Name() {
 			toSpawn = true
 		}
