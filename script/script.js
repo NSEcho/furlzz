@@ -30,19 +30,19 @@ rpc.exports = {
     setup_fuzz(method, appName, delegateName, sceneName) {
         switch (method) {
             case "delegate":
-                    if (!delegateName) {
+                    if (delegateName !== "") {
                         delegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
                     } else {
                         delegate = ObjC.Object(ObjC.chooseSync(AppDelegate)[0]);
                     }
-                    if (!appName) {
+                    if (appName !== "") {
                         app = ObjC.Object(ObjC.chooseSync(ObjC.classes[appName])[0]);
                     } else {
                         app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
                     }
                 break;
             case "app":
-                if (!appName) {
+                if (appName === "") {
                     app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
                 } else {
                     app = ObjC.Object(ObjC.chooseSync(ObjC.classes[appName])[0]);
@@ -53,7 +53,7 @@ rpc.exports = {
                 activity = NSUserActivity.alloc().initWithActivityType_(NSUserActivityTypeBrowsingWeb);
                 sceneDelegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
                 shared = ObjC.Object(UIApplication.sharedApplication());
-                if (!sceneName) {
+                if (sceneName !== "") {
                     scene = ObjC.Object(ObjC.chooseSync(ObjC.classes[scene])[0]);
                 } else {
                     scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
@@ -61,7 +61,7 @@ rpc.exports = {
                 break;
             case "scene_context":
                 sceneDelegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
-                if (sceneName) {
+                if (sceneName != "") {
                     scene = ObjC.Object(ObjC.chooseSync(ObjC.classes[sceneName])[0]);
                 } else {
                     scene = ObjC.Object(ObjC.chooseSync(UIWindowScene)[0]);
@@ -74,7 +74,7 @@ rpc.exports = {
                 activity = NSUserActivity.alloc().initWithActivityType_(NSUserActivityTypeBrowsingWeb);
                 delegate = ObjC.Object(ObjC.chooseSync(ObjC.classes[delegateName])[0]);
                 shared = ObjC.Object(UIApplication.sharedApplication());
-                if (!appName) {
+                if (appName === "") {
                     app = ObjC.Object(ObjC.chooseSync(UIApplication)[0]);
                 } else {
                     app = ObjC.Object(ObjC.chooseSync(ObjC.classes[appName])[0]);
