@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+var sess *frida.Session = nil
 var crashCmd = &cobra.Command{
 	Use:   "crash",
 	Short: "Run the application with crash",
@@ -39,16 +40,33 @@ var crashCmd = &cobra.Command{
 
 		l.Infof("Read %s from crash file", string(input))
 
-		dev := frida.USBDevice()
-		if dev == nil {
-			return errors.New("no USB device detected")
-		}
-		defer dev.Clean()
+		//Adding support for accessing remote devices, else default is USB
+		if s.NetworkDevice != "" {
+			mgr := frida.NewDeviceManager()
+			ropts := frida.NewRemoteDeviceOptions()
+			dev, err := mgr.AddRemoteDevice(s.NetworkDevice, ropts)
+			if err != nil {
+				return err
+			}
+			defer dev.Clean()
 
-		sess, err := dev.Attach(s.App, nil)
-		if err != nil {
-			return err
+			sess, err = dev.Attach(s.App, nil)
+			if err != nil {
+				return err
+			}
+		} else {
+			dev := frida.USBDevice()
+			if dev == nil {
+				return errors.New("no USB device detected")
+			}
+			defer dev.Clean()
+
+			sess, err = dev.Attach(s.App, nil)
+			if err != nil {
+				return err
+			}
 		}
+
 		defer sess.Clean()
 
 		l.Infof("Attached to %s", s.App)
@@ -73,7 +91,7 @@ var crashCmd = &cobra.Command{
 
 		time.Sleep(2 * time.Second)
 
-		_ = script.ExportsCall("setup", s.Method, s.UIApp, s.Delegate, s.Scene)
+		_ = script.ExportsCall("setup_fuzz", s.Method, s.UIApp, s.Delegate, s.Scene)
 
 		_ = script.ExportsCall("fuzz", s.Method, string(input))
 
