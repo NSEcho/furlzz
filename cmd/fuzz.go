@@ -189,9 +189,9 @@ var fuzzCmd = &cobra.Command{
 						Delegate:      delegate,
 						Function:      fn,
 						Method:        method,
+						NetworkDevice: network,
 						Scene:         scene,
 						UIApp:         uiapp,
-						NetworkDevice: network,
 					}
 					if err := s.WriteToFile(); err != nil {
 						sendErr(p, fmt.Sprintf("Could not write session file: %s", err.Error()))
