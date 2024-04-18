@@ -184,13 +184,14 @@ var fuzzCmd = &cobra.Command{
 						sendStats(p, fmt.Sprintf("Written crash to: %s", out))
 					}
 					s := Session{
-						App:      app,
-						Base:     base,
-						Delegate: delegate,
-						Function: fn,
-						Method:   method,
-						Scene:    scene,
-						UIApp:    uiapp,
+						App:           app,
+						Base:          base,
+						Delegate:      delegate,
+						Function:      fn,
+						Method:        method,
+						NetworkDevice: network,
+						Scene:         scene,
+						UIApp:         uiapp,
 					}
 					if err := s.WriteToFile(); err != nil {
 						sendErr(p, fmt.Sprintf("Could not write session file: %s", err.Error()))
