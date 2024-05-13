@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/charmbracelet/bubbletea v0.26.1
 	github.com/charmbracelet/lipgloss v0.10.0
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/frida/frida-go v0.7.2
 	github.com/spf13/cobra v1.8.0
 	gopkg.in/yaml.v3 v3.0.1
