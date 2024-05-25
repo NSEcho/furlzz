@@ -3,7 +3,7 @@ module github.com/nsecho/furlzz
 go 1.20
 
 require (
-	github.com/charmbracelet/bubbletea v0.26.1
+	github.com/charmbracelet/bubbletea v0.26.2
 	github.com/charmbracelet/lipgloss v0.10.0
 	github.com/fatih/color v1.17.0
 	github.com/frida/frida-go v0.7.2
@@ -28,7 +28,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	golang.org/x/sync v0.7.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/term v0.19.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
+	golang.org/x/term v0.20.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 )
