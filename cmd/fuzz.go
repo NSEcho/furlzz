@@ -305,8 +305,10 @@ func spawnApp(dev frida.DeviceInt, app string, p *tea.Program, toSpawn bool) {
 			}
 		}
 	sendStats(p, "Spawning app:"+app)
-	//Sleeping for a second before fuzzing so app spawn properly
-	time.Sleep(1 * time.Second)
+	//Sleep for supplied time before fuzzing so app spawn properly
+	if timeout > 0 {
+			time.Sleep(time.Duration(timeout) * time.Second)
+		}
 	}
 }
 
