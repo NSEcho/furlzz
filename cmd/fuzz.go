@@ -53,6 +53,11 @@ var fuzzCmd = &cobra.Command{
 			return err
 		}
 
+		sTimeout, err := cmd.Flags().GetUint("spawn-timeout")
+		if err != nil {
+			return err
+		}
+
 		method, err := cmd.Flags().GetString("method")
 		if err != nil {
 			return err
@@ -125,7 +130,7 @@ var fuzzCmd = &cobra.Command{
 				return
 			}
 
-			//Adding support for accessing remote devices, else default is USB
+			// Adding support for accessing remote devices, else default is USB
 			if network != "" {
 				mgr := frida.NewDeviceManager()
 				ropts := frida.NewRemoteDeviceOptions()
@@ -136,8 +141,8 @@ var fuzzCmd = &cobra.Command{
 				}
 				defer dev.Clean()
 
-				//Spawn app only if not in foreground
-				spawnApp(dev, app, p, false)
+				// Spawn app only if not in foreground
+				spawnApp(dev, app, p, false, sTimeout)
 				sess, err = dev.Attach(app, nil)
 				if err != nil {
 					sendErr(p, err.Error())
@@ -152,8 +157,8 @@ var fuzzCmd = &cobra.Command{
 				}
 				defer dev.Clean()
 
-				//Spawn app only if not in foreground
-				spawnApp(dev, app, p, false)
+				// Spawn app only if not in foreground
+				spawnApp(dev, app, p, false, sTimeout)
 				sess, err = dev.Attach(app, nil)
 				if err != nil {
 					sendErr(p, err.Error())
@@ -255,23 +260,23 @@ func sendErr(p *tea.Program, msg string) {
 	p.Send(tui.ErrMsg(msg))
 }
 
-func spawnApp(dev frida.DeviceInt, app string, p *tea.Program, toSpawn bool) {
+func spawnApp(dev frida.DeviceInt, app string, p *tea.Program, toSpawn bool, sTimeout uint) {
 	process, err := dev.FindProcessByName(app, frida.ScopeMinimal)
 	if err != nil {
 		sendErr(p, err.Error())
 		return
 	}
-	//If app is not open, Spawn it
+	// If app is not open, Spawn it
 	if process.PID() < 0 {
 		toSpawn = true
 	} else if process.PID() > 0 {
-		//If app is in process but not in foreground, Spawn it
+		// If app is in process but not in foreground, Spawn it
 		frontApp, err := dev.FrontmostApplication(frida.ScopeMinimal)
 		if err != nil {
-			//We don't need to exit/return here, since frida throws generic error if no app is in foreground sending as stats
+			// We don't need to exit/return here, since frida throws generic error if no app is in foreground sending as stats
 			sendStats(p, err.Error())
 		}
-		//Checking if foreground app does not match intended app, then we spawn it
+		// Checking if foreground app does not match intended app, then we spawn it
 		if frontApp == nil || frontApp.Name() != process.Name() {
 			toSpawn = true
 		}
@@ -304,10 +309,10 @@ func spawnApp(dev frida.DeviceInt, app string, p *tea.Program, toSpawn bool) {
 				break
 			}
 		}
-	sendStats(p, "Spawning app:"+app)
-	//Sleep for supplied time before fuzzing so app spawn properly
-	if timeout > 0 {
-			time.Sleep(time.Duration(timeout) * time.Second)
+		sendStats(p, "Spawning app:"+app)
+		// Sleep for supplied time before fuzzing so app spawn properly
+		if sTimeout > 0 {
+			time.Sleep(time.Duration(sTimeout) * time.Second)
 		}
 	}
 }
@@ -324,6 +329,7 @@ func init() {
 	fuzzCmd.Flags().BoolP("crash", "c", false, "ignore previous crashes")
 	fuzzCmd.Flags().UintP("runs", "r", 0, "number of runs")
 	fuzzCmd.Flags().UintP("timeout", "t", 1, "sleep X seconds between each case")
+	fuzzCmd.Flags().UintP("spawn-timeout", "", 1, "how much to wait after spawn")
 	fuzzCmd.Flags().StringP("network", "n", "", "Connect to Device Remotely")
 
 	rootCmd.AddCommand(fuzzCmd)
