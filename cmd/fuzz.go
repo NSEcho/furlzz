@@ -136,6 +136,8 @@ var fuzzCmd = &cobra.Command{
 				}
 				defer dev.Clean()
 
+				//Spawn app only if not in foreground
+				spawnApp(dev, app, p, false)
 				sess, err = dev.Attach(app, nil)
 				if err != nil {
 					sendErr(p, err.Error())
@@ -150,6 +152,8 @@ var fuzzCmd = &cobra.Command{
 				}
 				defer dev.Clean()
 
+				//Spawn app only if not in foreground
+				spawnApp(dev, app, p, false)
 				sess, err = dev.Attach(app, nil)
 				if err != nil {
 					sendErr(p, err.Error())
@@ -249,6 +253,63 @@ func sendStats(p *tea.Program, msg string) {
 
 func sendErr(p *tea.Program, msg string) {
 	p.Send(tui.ErrMsg(msg))
+}
+
+func spawnApp(dev frida.DeviceInt, app string, p *tea.Program, toSpawn bool) {
+	process, err := dev.FindProcessByName(app, frida.ScopeMinimal)
+	if err != nil {
+		sendErr(p, err.Error())
+		return
+	}
+	//If app is not open, Spawn it
+	if process.PID() < 0 {
+		toSpawn = true
+	} else if process.PID() > 0 {
+		//If app is in process but not in foreground, Spawn it
+		frontApp, err := dev.FrontmostApplication(frida.ScopeMinimal)
+		if err != nil {
+			//We don't need to exit/return here, since frida throws generic error if no app is in foreground sending as stats
+			sendStats(p, err.Error())
+		}
+		//Checking if foreground app does not match intended app, then we spawn it
+		if frontApp == nil || frontApp.Name() != process.Name() {
+			toSpawn = true
+		}
+	}
+
+	if toSpawn == true {
+		fopts := frida.NewSpawnOptions()
+		fopts.SetArgv([]string{
+			"",
+		})
+		appsList, err := dev.EnumerateApplications("", frida.ScopeMinimal)
+		if err != nil {
+			sendErr(p, err.Error())
+			return
+		}
+
+		for i := 0; i < int(len(appsList)); i++ {
+			appName := appsList[i]
+			if appName.Name() == app {
+				pid, err := dev.Spawn(appName.Identifier(), fopts)
+				if err != nil {
+					sendErr(p, err.Error())
+					return
+				}
+				err = dev.Resume(pid)
+				if err != nil {
+					sendErr(p, err.Error())
+					return
+				}
+				break
+			}
+		}
+	sendStats(p, "Spawning app:"+app)
+	//Sleep for supplied time before fuzzing so app spawn properly
+	if timeout > 0 {
+			time.Sleep(time.Duration(timeout) * time.Second)
+		}
+	}
 }
 
 func init() {
