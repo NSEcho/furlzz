@@ -35,4 +35,8 @@ jobs:
           outdir: /tmp/data/macos_amd64
       -
         name: Build
-        run: CGO_LDFLAGS=-L/tmp/data/macos_arm64/lib CGO_CFLAGS=-I/tmp/data/macos_arm64/include CGO_ENABLED=1 go build
+        env:
+          CGO_ENABLED: 1
+          CGO_LDFLAGS: -L/tmp/data/macos_arm64/lib
+          CGO_CFLAGS: -I/tmp/data/macos_arm64/include
+        run: go build
