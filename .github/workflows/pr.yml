@@ -1,0 +1,38 @@
+name: Build
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        frida_version: ["16.1.9"]
+    runs-on: macos-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      -
+        name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '^1.22.x'
+      - run: go version    
+      -
+        name: Fetch all tags
+        run: git fetch --force --tags
+      -
+        name: Download Frida macOS_amd64
+        uses: ./.github/actions/install-frida-devkit
+        with:
+          arch: x86_64
+          os: macos
+          version: ${{ matrix.frida_version }}
+          outdir: /tmp/data/macos_amd64
+      -
+        name: Build
+        run: CGO_LDFLAGS=-L/tmp/data/macos_arm64/lib CGO_CFLAGS=-I/tmp/data/macos_arm64/include CGO_ENABLED=1 go build
