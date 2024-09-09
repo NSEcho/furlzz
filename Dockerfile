@@ -17,7 +17,7 @@ RUN wget https://go.dev/dl/$GOV.$TARGETOS-$TARGETARCH.tar.gz \
   && tar -C /usr/local -xzf $GOV.$TARGETOS-$TARGETARCH.tar.gz
 
 RUN mkdir /tmp/frida-core-devkit && cd /tmp/frida-core-devkit \
-  && wget https://github.com/frida/frida/releases/download/$FRIDAVERSION/frida-core-devkit-$FRIDAVERSION-$TARGETOS-$TARGETARCH.tar.xz -O - \
+  && wget https://github.com/frida/frida/releases/download/16.5.1/frida-core-devkit-16.5.1-linux-x86_64.tar.xz -O - \
   | tar --extract --xz
 
 RUN cp /tmp/frida-core-devkit/libfrida-core.a /usr/local/lib \
