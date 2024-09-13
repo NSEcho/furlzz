@@ -19,6 +19,10 @@ To manually install furlzz, do:
 
 # Usage
 
+## Binary
+
+Simply run the binary with corresponding flags with either attaching over USB or on over the network with `-n` flag.
+
 ```bash
 $ furlzz fuzz --help
 Fuzz URL scheme
@@ -41,6 +45,10 @@ Flags:
   -t, --timeout uint      sleep X seconds between each case (default 1)
   -u, --uiapp string      UIApplication name
 ```
+
+## Docker
+Starting from `2.5.0`, furlzz now can be run inside of Docker container, for full details visit [Dockerfile.md](./Dockerfile.md) 
+for documentation.
 
 There are basically two ways you can go with fuzzing using `furlzz`:
 
