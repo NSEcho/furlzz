@@ -139,8 +139,6 @@ var fuzzCmd = &cobra.Command{
 				}
 				defer dev.Clean()
 
-				// Spawn app only if not in foreground
-				spawnApp(dev, app, p, false, sTimeout)
 				sess, err = dev.Attach(app, nil)
 				if err != nil {
 					sendErr(p, err.Error())
@@ -241,10 +239,6 @@ var fuzzCmd = &cobra.Command{
 						time.Sleep(time.Duration(timeout) * time.Second)
 					}
 				}
-			}
-
-			for {
-
 			}
 		}()
 
