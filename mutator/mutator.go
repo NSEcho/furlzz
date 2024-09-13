@@ -46,11 +46,18 @@ type Mutator struct {
 	validInputs    []string
 	crashes        []string
 	multipleRounds bool
+	quit           chan struct{}
 }
 
 type Mutated struct {
 	Input    string
 	Mutation string
+}
+
+func (m *Mutator) Close() {
+	m.quit <- struct{}{}
+	close(m.ch)
+	close(m.quit)
 }
 
 func (m *Mutator) Mutate() <-chan *Mutated {
@@ -65,9 +72,14 @@ func (m *Mutator) Mutate() <-chan *Mutated {
 			close(m.ch)
 		} else {
 			for {
-				inp := m.mutateAndSend()
-				for !inp {
-					inp = m.mutateAndSend()
+				select {
+				case <-m.quit:
+					break
+				default:
+					inp := m.mutateAndSend()
+					for !inp {
+						inp = m.mutateAndSend()
+					}
 				}
 			}
 		}

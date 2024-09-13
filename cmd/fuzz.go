@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -92,6 +93,11 @@ var fuzzCmd = &cobra.Command{
 			return err
 		}
 
+		wd, err := cmd.Flags().GetString("working-dir")
+		if err != nil {
+			return err
+		}
+
 		m := tui.NewModel()
 		m.Crash = crash
 		m.Runs = runs
@@ -108,6 +114,8 @@ var fuzzCmd = &cobra.Command{
 		m.ValidInputs = validInputs
 
 		p := tea.NewProgram(m)
+
+		mut := mutator.NewMutator(base, app, runs, fn, crash, validInputs...)
 
 		var sess *frida.Session = nil
 		var script *frida.Script = nil
@@ -167,14 +175,15 @@ var fuzzCmd = &cobra.Command{
 			sendStats(p, fmt.Sprintf("Attached to %s", app))
 
 			var lastInput string
+			detached := make(chan struct{})
 
 			sess.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
-				// Add sleep here so that we can wait for the context to get cancelled
+				detached <- struct{}{}
 				defer p.Send(tui.SessionDetached{})
 				sendStats(p, fmt.Sprintf("Session detached; reason=%s", reason.String()))
 				out := fmt.Sprintf("fcrash_%s_%s", app, crashSHA256(lastInput))
 				err := func() error {
-					f, err := os.Create(out)
+					f, err := os.Create(filepath.Join(wd, out))
 					if err != nil {
 						return err
 					}
@@ -196,7 +205,7 @@ var fuzzCmd = &cobra.Command{
 					Scene:         scene,
 					UIApp:         uiapp,
 				}
-				if err := s.WriteToFile(); err != nil {
+				if err := s.WriteToFile(wd); err != nil {
 					sendErr(p, fmt.Sprintf("Could not write session file: %s", err.Error()))
 				} else {
 					sendStats(p, "Written session file")
@@ -223,14 +232,17 @@ var fuzzCmd = &cobra.Command{
 			_ = script.ExportsCall("setup_fuzz", method, uiapp, delegate, scene)
 			sendStats(p, "Finished fuzz setup")
 
-			mut := mutator.NewMutator(base, app, runs, fn, crash, validInputs...)
 			ch := mut.Mutate()
 
-		mutateLoop:
+		mLoop:
 			for {
 				select {
+				case <-detached:
+					mut.Close()
+					break mLoop
 				case <-m.ExitCh:
-					break mutateLoop
+					mut.Close()
+					break mLoop
 				case mutated := <-ch:
 					lastInput = mutated.Input
 					p.Send(tui.MutatedMsg(mutated))
@@ -321,6 +333,7 @@ func init() {
 	fuzzCmd.Flags().StringP("delegate", "d", "", "UISceneDelegate class name")
 	fuzzCmd.Flags().StringP("uiapp", "u", "", "UIApplication class name")
 	fuzzCmd.Flags().StringP("scene", "s", "", "UIScene class name")
+	fuzzCmd.Flags().StringP("working-dir", "w", ".", "Working directory")
 	fuzzCmd.Flags().BoolP("crash", "c", false, "ignore previous crashes")
 	fuzzCmd.Flags().UintP("runs", "r", 0, "number of runs")
 	fuzzCmd.Flags().UintP("timeout", "t", 1, "sleep X seconds between each case")

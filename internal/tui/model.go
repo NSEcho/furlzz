@@ -69,11 +69,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
-			if !m.Stopped {
-				m.ExitCh <- struct{}{}
-				m.Stopped = true
-			}
 			m.exiting = true
+			m.ExitCh <- struct{}{}
 			return m, m.Tick()
 		}
 	case StatsMsg:
@@ -81,10 +78,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.messages = append(m.messages, ms)
 		return m, nil
 	case ErrMsg:
-		if !m.Stopped {
-			m.ExitCh <- struct{}{}
-			m.Stopped = true
-		}
 		m.lastErr = fmt.Sprintf("+%ds=>%s", int(time.Since(m.start).Seconds()), string(msg))
 		m.exiting = true
 		return m, m.Tick()
@@ -99,10 +92,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, m.Tick()
 	case SessionDetached:
-		if !m.Stopped {
-			m.ExitCh <- struct{}{}
-			m.Stopped = true
-		}
 		m.exiting = true
 		return m, m.Tick()
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -34,11 +35,11 @@ type Session struct {
 	UIApp         string `yaml:"uiapp"`
 }
 
-func (s *Session) WriteToFile() error {
+func (s *Session) WriteToFile(wd string) error {
 	t := time.Now()
 	outputFilename := fmt.Sprintf("session_%s", t.Format("2006_01_02_15:04:05"))
 
-	f, err := os.Create(outputFilename)
+	f, err := os.Create(filepath.Join(wd, outputFilename))
 	if err != nil {
 		return err
 	}
