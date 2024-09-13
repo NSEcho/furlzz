@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -112,7 +111,6 @@ var fuzzCmd = &cobra.Command{
 
 		var sess *frida.Session = nil
 		var script *frida.Script = nil
-		hasCrashed := false
 
 		go func() {
 			if base == "" {
@@ -174,39 +172,36 @@ var fuzzCmd = &cobra.Command{
 
 			sess.On("detached", func(reason frida.SessionDetachReason, crash *frida.Crash) {
 				// Add sleep here so that we can wait for the context to get cancelled
-				time.Sleep(3 * time.Second)
 				defer p.Send(tui.SessionDetached{})
-				if hasCrashed {
-					sendStats(p, fmt.Sprintf("Session detached; reason=%s", reason.String()))
-					out := fmt.Sprintf("fcrash_%s_%s", app, crashSHA256(lastInput))
-					err := func() error {
-						f, err := os.Create(out)
-						if err != nil {
-							return err
-						}
-						_, err = f.WriteString(lastInput)
-						return err
-					}()
+				sendStats(p, fmt.Sprintf("Session detached; reason=%s", reason.String()))
+				out := fmt.Sprintf("fcrash_%s_%s", app, crashSHA256(lastInput))
+				err := func() error {
+					f, err := os.Create(out)
 					if err != nil {
-						sendErr(p, fmt.Sprintf("Could not write crash file: %s", err.Error()))
-					} else {
-						sendStats(p, fmt.Sprintf("Written crash to: %s", out))
+						return err
 					}
-					s := Session{
-						App:           app,
-						Base:          base,
-						Delegate:      delegate,
-						Function:      fn,
-						Method:        method,
-						NetworkDevice: network,
-						Scene:         scene,
-						UIApp:         uiapp,
-					}
-					if err := s.WriteToFile(); err != nil {
-						sendErr(p, fmt.Sprintf("Could not write session file: %s", err.Error()))
-					} else {
-						sendStats(p, "Written session file")
-					}
+					_, err = f.WriteString(lastInput)
+					return err
+				}()
+				if err != nil {
+					sendErr(p, fmt.Sprintf("Could not write crash file: %s", err.Error()))
+				} else {
+					sendStats(p, fmt.Sprintf("Written crash to: %s", out))
+				}
+				s := Session{
+					App:           app,
+					Base:          base,
+					Delegate:      delegate,
+					Function:      fn,
+					Method:        method,
+					NetworkDevice: network,
+					Scene:         scene,
+					UIApp:         uiapp,
+				}
+				if err := s.WriteToFile(); err != nil {
+					sendErr(p, fmt.Sprintf("Could not write session file: %s", err.Error()))
+				} else {
+					sendStats(p, "Written session file")
 				}
 			})
 
@@ -233,17 +228,23 @@ var fuzzCmd = &cobra.Command{
 			mut := mutator.NewMutator(base, app, runs, fn, crash, validInputs...)
 			ch := mut.Mutate()
 
-			for mutated := range ch {
-				lastInput = mutated.Input
-				p.Send(tui.MutatedMsg(mutated))
-				ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
-				if err := script.ExportsCallWithContext(ctx, "fuzz", method, mutated.Input); err == frida.ErrContextCancelled {
-					hasCrashed = true
-					break
+		mutateLoop:
+			for {
+				select {
+				case <-m.ExitCh:
+					break mutateLoop
+				case mutated := <-ch:
+					lastInput = mutated.Input
+					p.Send(tui.MutatedMsg(mutated))
+					script.ExportsCall("fuzz", method, mutated.Input)
+					if timeout > 0 {
+						time.Sleep(time.Duration(timeout) * time.Second)
+					}
 				}
-				if timeout > 0 {
-					time.Sleep(time.Duration(timeout) * time.Second)
-				}
+			}
+
+			for {
+
 			}
 		}()
 

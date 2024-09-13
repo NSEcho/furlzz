@@ -12,6 +12,7 @@ import (
 
 type Model struct {
 	Crash       bool
+	Stopped     bool
 	Runs        uint
 	Timeout     uint
 	App         string
@@ -24,6 +25,7 @@ type Model struct {
 	Base        string
 	Input       string
 	ValidInputs []string
+	ExitCh      chan struct{}
 
 	exiting    bool
 	start      time.Time
@@ -54,6 +56,7 @@ func NewModel() Model {
 
 	m.seconds = 5
 	m.start = time.Now()
+	m.ExitCh = make(chan struct{})
 	return m
 }
 
@@ -66,6 +69,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
+			if !m.Stopped {
+				m.ExitCh <- struct{}{}
+				m.Stopped = true
+			}
 			m.exiting = true
 			return m, m.Tick()
 		}
@@ -74,6 +81,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.messages = append(m.messages, ms)
 		return m, nil
 	case ErrMsg:
+		if !m.Stopped {
+			m.ExitCh <- struct{}{}
+			m.Stopped = true
+		}
 		m.lastErr = fmt.Sprintf("+%ds=>%s", int(time.Since(m.start).Seconds()), string(msg))
 		m.exiting = true
 		return m, m.Tick()
@@ -88,6 +99,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, m.Tick()
 	case SessionDetached:
+		if !m.Stopped {
+			m.ExitCh <- struct{}{}
+			m.Stopped = true
+		}
 		m.exiting = true
 		return m, m.Tick()
 	}
