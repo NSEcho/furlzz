@@ -31,10 +31,13 @@ Now create your inputs directory and run the container.
 ```bash
 $ mkdir inputs 
 $ echo -n '13333337' > ./inputs/1
-$ docker run -v /local/path/to/inputs/directory:/tmp/inputs -it --rm furlzz fuzz -b BASE_URL \
+$ mkdir session
+$ docker run -v /local/path/to/session/directory:/tmp/session \
+-v /local/path/to/inputs/directory:/tmp/inputs -it --rm furlzz fuzz -b BASE_URL \
 -f FUNCTION_TO_APPLY_TO_INPUTS -i /tmp/inputs/ -t TIMEOUT \
 -m METHOD -a NAME_RETURNED_BY_FRIDA-PS -d OPTIONAL_DELEGATE \
 -n IPv4 address of the portal
+$ cat session/crashFile
 ```
 
 ![Fuzzing](./running_container.png)
