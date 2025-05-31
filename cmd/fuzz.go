@@ -136,6 +136,8 @@ var fuzzCmd = &cobra.Command{
 				return
 			}
 
+			sendStats(p, fmt.Sprintf("Frida version: %s\n", frida.Version()))
+
 			// Adding support for accessing remote devices, else default is USB
 			if network != "" {
 				mgr := frida.NewDeviceManager()
@@ -246,7 +248,7 @@ var fuzzCmd = &cobra.Command{
 				case mutated := <-ch:
 					lastInput = mutated.Input
 					p.Send(tui.MutatedMsg(mutated))
-					script.ExportsCall("fuzz", method, mutated.Input)
+					_ = script.ExportsCall("fuzz", method, mutated.Input)
 					if timeout > 0 {
 						time.Sleep(time.Duration(timeout) * time.Second)
 					}
