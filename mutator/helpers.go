@@ -6,22 +6,19 @@ import (
 	"path/filepath"
 )
 
-func (m *Mutator) getFuzzedInput() string {
+func (m *Mutator) getFuzzedInput(set string) string {
 	if m.multipleRounds {
 		if m.lastInput == "" {
-			m.lastInput = m.fetchInput()
+			m.lastInput = m.fetchInput(set)
 		}
 		return m.lastInput
 	}
-	return m.fetchInput()
+	return m.fetchInput(set)
 }
 
-func (m *Mutator) fetchInput() string {
-	if m.fuzzIdx == -1 || len(m.validInputs) == 0 {
-		return m.input
-	}
-	k := m.r.Intn(len(m.validInputs))
-	return m.validInputs[k]
+func (m *Mutator) fetchInput(set string) string {
+	k := m.r.Intn(len(m.inputSets[set]))
+	return m.inputSets[set][k]
 }
 
 func readCrashes(app string) ([]string, error) {

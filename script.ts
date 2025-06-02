@@ -19,15 +19,15 @@ let scene : ObjC.Object | null = null;
 let sceneDelegate : ObjC.Object;
 let opts : ObjC.Object = NSMutableDictionary.alloc().init();
 
-let NSUserActivityTypeBrowsingWeb = null
 let activity: ObjC.Object;
 
 let ctx: ObjC.Object;
 let ctxOpts: ObjC.Object;
 
+const NSUserActivityTypeBrowsingWeb: string = "NSUserActivityTypeBrowsingWeb";
+
 rpc.exports = {
-    setup_fuzz(method, appName, delegateName, sceneName) {
-        NSUserActivityTypeBrowsingWeb = Process.getModuleByName("CoreFoundation").getExportByName("NSUserActivityTypeBrowsingWeb");
+    setup_fuzz(method: string, appName, delegateName: string, sceneName: string) {
         switch (method) {
             case "delegate":
                     if (delegateName !== "") {
@@ -117,7 +117,7 @@ rpc.exports = {
                 activity.setWebPageURL_(ur);
 
                 ObjC.schedule(ObjC.mainQueue, () => {
-                    delegate.application_continueUserActivity_restorationHandler_(app,activity,activity);
+                    delegate.application_continueUserActivity_restorationHandler_(app,activity,null);
                 })
                 break;
             default:
