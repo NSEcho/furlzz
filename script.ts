@@ -41,7 +41,7 @@ rpc.exports = {
                         app = ObjC.chooseSync(UIApplication)[0];
                     }
                 break;
-            case "app":
+            case "application":
                 if (appName === "") {
                     app = ObjC.chooseSync(UIApplication)[0];
                 } else {
@@ -89,7 +89,7 @@ rpc.exports = {
                 opts.setValue_forKey_(0, "UIApplicationOpenURLOptionsOpenInPlaceKey");
                 delegate.application_openURL_options_(app, ur, opts);
                 break;
-            case "app":
+            case "application":
                 ObjC.schedule(ObjC.mainQueue, () => {
                     app.openURL_(ur);
                 });

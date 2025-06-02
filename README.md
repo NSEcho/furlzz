@@ -21,54 +21,37 @@ To manually install furlzz, do:
 
 ## Binary
 
-Simply run the binary with corresponding flags with either attaching over USB or on over the network with `-n` flag.
+* Run `furlzz init` with optional `-c` output filename and `-t` URL opening method. To see the full list of methods, keep reading below.
+* Edit the config file
+* Prepare inputs
+* Run `furlzz fuzz -c /path/to/your/config/file`
 
 ```bash
-$ furlzz fuzz --help
-Fuzz URL scheme
+$ furlzz --help
+  Fuzz iOS URL schemes
 
 Usage:
-  furlzz fuzz [flags]
+  furlzz [command]
+
+Available Commands:
+  crash       Run the application with crash
+  fuzz        Fuzz URL scheme
+  help        Help about any command
+  init        Initialize a new furlzz project
 
 Flags:
-  -a, --app string        Application name to attach to (default "Gadget")
-  -b, --base string       base URL to fuzz
-  -c, --crash             ignore previous crashes
-  -d, --delegate string   if the method is scene_activity, you need to specify UISceneDelegate class
-  -f, --function string   apply the function to mutated input (url, base64)
-  -h, --help              help for fuzz
-  -i, --input string      path to input directory
-  -m, --method string     method of opening url (delegate, app) (default "delegate")
-  -n, --network string    Connect to remote network device (default is "USB")
-  -r, --runs uint         number of runs
-  -s, --scene string      scene class name
-  -t, --timeout uint      sleep X seconds between each case (default 1)
-  -u, --uiapp string      UIApplication name
+  -h, --help   help for furlzz
+
+Use "furlzz [command] --help" for more information about a command.
 ```
-
-## Docker
-Starting from `2.5.0`, furlzz now can be run inside of Docker container, for full details visit [Dockerfile.md](./Dockerfile.md) 
-for documentation.
-
-There are basically two ways you can go with fuzzing using `furlzz`:
-
-* give base URL (`--base`) with `FUZZ` keyword in it along with `--input` directory containing inputs
-* just give base URL without `FUZZ` keyword which would fuzz the raw base url passed (less efficient)
-
-furlzz supports two post-process methods right now; url and base64. The first one does URL 
-encode on the mutated input while the second one generates base64 from it.
 
 # Fuzzing
 
 1. Figure out the method of opening URLs inside the application (with `frida-trace` for example)
 2. Find out base url
-3. Create some inputs
-4. Pass the flags to `furlzz fuzz`
-5. Most of the time, values have to be URL encoded, so use `--function url`
-6. Adjust timeout if you would like to go with slower fuzzing
-7. If the crash happen, replay it with `furlzz crash` passing created session and crash files
-
-
+3. Create inputs
+4. Edit config file
+5. If the crash happen, replay it with `furlzz crash` passing created session and crash files
 
 # Mutations
 
@@ -86,17 +69,10 @@ encode on the mutated input while the second one generates base64 from it.
 
 Right now furlzz supports a couple of methods of opening URLs:
 * `delegate` when the application uses `-[AppDelegate application:openURL:options:]`
-* `app` when the application is using `-[UIApplication openURL:]`
+* `application` when the application is using `-[UIApplication openURL:]`
 * `scene_activity` - when the application is using `-[UISceneDelegate scene:continueUserActivity]` - Universal Links
 * `scene_context` when the application is using `-[UISceneDelegate scene:openURLContexts:]`
 * `delegate_activity` when the application is using `-[AppDelegate application:continueUserActivity:restorationHandler]` - Universal Links
-
-# Additional flags
-
-* For the method of `scene_activity` you need to pass the `UISceneDelegate` class name
-* For the method of `delegate` you need to pass the `AppDelegate` class name
-* For the method of `scene_context` you need to pass `UISceneDelegate` class name
-* For the method of `delegate_activity` you need to pass `AppDelegate` class name
 
 PRs are more than welcome to extend any functionality inside the furlzz
 
