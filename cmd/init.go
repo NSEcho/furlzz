@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"encoding/json"
-	"github.com/nsecho/furlzz/internal/config"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/nsecho/furlzz/internal/config"
 )
 
 const (
@@ -67,7 +69,7 @@ var initCmd = &cobra.Command{
 			Timeout:      1,
 			WorkingDir:   ".",
 			Function:     "url",
-			Type:         defaultType,
+			Type:         tp,
 			Fuzz:         dt,
 		}
 
