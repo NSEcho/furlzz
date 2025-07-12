@@ -1,0 +1,18 @@
+{
+  "app": "iGoat-Swift",
+  "base": "iGoat://?contactNumber=FUZZ1",
+  "ignore_crashes": false,
+  "inputs": [
+    "tests/iGoat/input_1"
+  ],
+  "remote_device": "",
+  "runs": 0,
+  "spawn_timeout": 0,
+  "timeout": 1,
+  "working_dir": ".",
+  "function": "url",
+  "type": "application",
+  "fuzz": {
+    "application": "UIApplication"
+  }
+}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -40,6 +41,7 @@ func NewMutator(inp, app string, runs uint, fnName string, ignoreCrashes bool, i
 }
 
 type Mutator struct {
+	mux           sync.RWMutex
 	fuzzIdx       int
 	runs          uint
 	baseURL       string
@@ -57,8 +59,9 @@ type Mutator struct {
 }
 
 type Mutated struct {
-	Input    string
-	Mutation string
+	Input         string
+	Mutation      string
+	MutatedInputs []string
 }
 
 func (m *Mutator) Close() {
@@ -152,9 +155,19 @@ func (m *Mutator) mutateAndSend() bool {
 	}
 
 	m.ch <- &Mutated{
-		Input:    inp,
-		Mutation: method,
+		Input:         inp,
+		Mutation:      method,
+		MutatedInputs: mutatedInputs,
 	}
 	m.lastInput = strings.Join(mutatedInputs, "")
 	return true
+}
+
+func (m *Mutator) HandleNewCoverage(mutatedInputs []string) {
+	if len(mutatedInputs) == 0 {
+		return
+	}
+	for i, input := range mutatedInputs {
+		m.addCorpus(fmt.Sprintf("FUZZ%d", i+1), input)
+	}
 }
