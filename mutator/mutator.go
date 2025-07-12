@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -40,6 +41,7 @@ func NewMutator(inp, app string, runs uint, fnName string, ignoreCrashes bool, i
 }
 
 type Mutator struct {
+	mux           sync.RWMutex
 	fuzzIdx       int
 	runs          uint
 	baseURL       string
