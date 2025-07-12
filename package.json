@@ -1,9 +1,9 @@
 {
   "name": "furlzz",
   "version": "1.0.0",
-  "type":"module",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "frida-compile -S -c script.ts -o _agent.js"
   },
   "repository": {
     "type": "git",
@@ -17,5 +17,8 @@
   "homepage": "https://github.com/NSEcho/furlzz#readme",
   "dependencies": {
     "frida-objc-bridge": "^8.0.4"
+  },
+  "devDependencies": {
+    "@types/frida-gum": "^19.0.0"
   }
 }

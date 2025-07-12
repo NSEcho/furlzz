@@ -3,12 +3,12 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"github.com/frida/frida-go/frida"
-	"github.com/nsecho/furlzz/cmd"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/frida/frida-go/frida"
+	"github.com/nsecho/furlzz/cmd"
 )
 
 const (
@@ -73,7 +73,7 @@ func main() {
 			sc = bundle
 		}
 	} else {
-		scriptContent, err = ioutil.ReadFile(filepath.Join(tempDir, agentFilename))
+		scriptContent, err = os.ReadFile(filepath.Join(tempDir, agentFilename))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to read agent: %v\n", err)
 			os.Exit(1)

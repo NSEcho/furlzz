@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 )
 
 func (m *Mutator) getFuzzedInput(set string) string {
@@ -19,6 +20,23 @@ func (m *Mutator) getFuzzedInput(set string) string {
 func (m *Mutator) fetchInput(set string) string {
 	k := m.r.Intn(len(m.inputSets[set]))
 	return m.inputSets[set][k]
+}
+
+func (m *Mutator) addCorpus(set, value string) {
+	if set == "" || value == "" {
+		return
+	}
+
+	if m.inputSets != nil {
+		if slices.Contains(m.inputSets[set], value) {
+			return
+		}
+
+		if _, e := m.inputSets[set]; !e {
+			m.inputSets[set] = []string{}
+		}
+		m.inputSets[set] = append(m.inputSets[set], value)
+	}
 }
 
 func readCrashes(app string) ([]string, error) {

@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/nsecho/furlzz/internal/config"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,9 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/frida/frida-go/frida"
-	"github.com/nsecho/furlzz/mutator"
 	"github.com/spf13/cobra"
+
+	"github.com/nsecho/furlzz/internal/config"
+	"github.com/nsecho/furlzz/mutator"
 )
 
 var (
@@ -208,9 +209,18 @@ var fuzzCmd = &cobra.Command{
 			case mutated := <-ch:
 				lastInput = mutated.Input
 				l.Infof("[%s] %s\n", color.New(color.FgCyan).Sprintf("%s", mutated.Mutation), mutated.Input)
+
 				_ = script.ExportsCall("fuzz", cfg.Type, mutated.Input)
+
 				if cfg.Timeout > 0 {
 					time.Sleep(time.Duration(cfg.Timeout) * time.Second)
+				}
+
+				// Check if script has new coverage blocks
+				has, ok := script.ExportsCall("has_new_blocks").(bool)
+				if ok && has {
+					l.Infof("New blocks found, continuing fuzzing...")
+					mut.HandleNewCoverage(mutated.MutatedInputs)
 				}
 			}
 		}
