@@ -37,6 +37,11 @@ var fuzzCmd = &cobra.Command{
 			return err
 		}
 
+		debug, err := cmd.Flags().GetBool("debug")
+		if err != nil {
+			return err
+		}
+
 		var cfg config.Config
 		f, err := os.Open(configPath)
 		if err != nil {
@@ -194,7 +199,7 @@ var fuzzCmd = &cobra.Command{
 			delegateName = fuzzMap["delegate"].(string)
 		}
 
-		_ = script.ExportsCall("setup_fuzz", method, uiapp, delegateName, sceneName)
+		_ = script.ExportsCall("setup_fuzz", method, uiapp, delegateName, sceneName, debug)
 
 		l.Infof("Finished fuzz setup")
 
@@ -285,6 +290,7 @@ func spawnApp(dev frida.DeviceInt, app string, toSpawn bool, sTimeout uint) erro
 
 func init() {
 	fuzzCmd.Flags().StringP("config", "c", "furlzz.json", "Path to config file")
+	fuzzCmd.Flags().BoolP("debug", "d", true, "Enable debug output (useful for coverage)")
 
 	rootCmd.AddCommand(fuzzCmd)
 }

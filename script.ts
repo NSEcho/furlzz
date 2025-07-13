@@ -114,7 +114,7 @@ class Fuzzer {
 
     public coverer: CoverageCollector | null = null;
 
-    setup(method: string, appName: string, delegateName: string, sceneName: string) {
+    setup(method: string, appName: string, delegateName: string, sceneName: string, debug: boolean) {
         let addr: NativePointer | null = null;
 
         switch (method) {
@@ -185,7 +185,7 @@ class Fuzzer {
         }
 
         if (!addr) return "function not found";
-        this.coverer = new CoverageCollector(addr, true);
+        this.coverer = new CoverageCollector(addr, debug);
         this.coverer.start();
     }
 
@@ -235,8 +235,8 @@ class Fuzzer {
 
 const fuzzer = new Fuzzer();
 rpc.exports = {
-    setup_fuzz: function (method: string, appName: string, delegateName: string, sceneName: string) {
-        fuzzer.setup(method, appName, delegateName, sceneName);
+    setup_fuzz: function (method: string, appName: string, delegateName: string, sceneName: string, debug: boolean) {
+        fuzzer.setup(method, appName, delegateName, sceneName, debug);
     },
     fuzz: function (method: string, url: string) {
         fuzzer.fuzz(method, url);
