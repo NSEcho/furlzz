@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/nsecho/furlzz/internal/config"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,9 +12,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/frida/frida-go/frida"
-	"github.com/nsecho/furlzz/mutator"
 	"github.com/spf13/cobra"
+
+	"github.com/nsecho/furlzz/internal/config"
+	"github.com/nsecho/furlzz/mutator"
 )
 
 var (
@@ -32,6 +33,11 @@ var fuzzCmd = &cobra.Command{
 		var err error
 
 		configPath, err := cmd.Flags().GetString("config")
+		if err != nil {
+			return err
+		}
+
+		debug, err := cmd.Flags().GetBool("debug")
 		if err != nil {
 			return err
 		}
@@ -193,7 +199,7 @@ var fuzzCmd = &cobra.Command{
 			delegateName = fuzzMap["delegate"].(string)
 		}
 
-		_ = script.ExportsCall("setup_fuzz", method, uiapp, delegateName, sceneName)
+		_ = script.ExportsCall("setup_fuzz", method, uiapp, delegateName, sceneName, debug)
 
 		l.Infof("Finished fuzz setup")
 
@@ -208,9 +214,18 @@ var fuzzCmd = &cobra.Command{
 			case mutated := <-ch:
 				lastInput = mutated.Input
 				l.Infof("[%s] %s\n", color.New(color.FgCyan).Sprintf("%s", mutated.Mutation), mutated.Input)
+
 				_ = script.ExportsCall("fuzz", cfg.Type, mutated.Input)
+
 				if cfg.Timeout > 0 {
 					time.Sleep(time.Duration(cfg.Timeout) * time.Second)
+				}
+
+				// Check if script has new coverage blocks
+				has, ok := script.ExportsCall("has_new_blocks").(bool)
+				if ok && has {
+					l.Infof("New blocks found, continuing fuzzing...")
+					mut.HandleNewCoverage(mutated.MutatedInputs)
 				}
 			}
 		}
@@ -275,6 +290,7 @@ func spawnApp(dev frida.DeviceInt, app string, toSpawn bool, sTimeout uint) erro
 
 func init() {
 	fuzzCmd.Flags().StringP("config", "c", "furlzz.json", "Path to config file")
+	fuzzCmd.Flags().BoolP("debug", "d", true, "Enable debug output (useful for coverage)")
 
 	rootCmd.AddCommand(fuzzCmd)
 }
